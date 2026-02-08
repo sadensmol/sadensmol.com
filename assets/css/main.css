@@ -136,13 +136,36 @@ footer {
   margin-top: 3rem;
 }
 
-footer p {
+.footer-line {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 1.5rem;
-  text-align: center;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-line span {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+/* --- Social Links (Footer) --- */
+.social-links {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.social-links a {
+  color: var(--text-muted);
+  display: flex;
+  transition: color 0.2s;
+}
+
+.social-links a:hover {
+  color: var(--accent);
+  text-decoration: none;
 }
 
 /* --- Recent Posts (Homepage) --- */
@@ -294,6 +317,12 @@ blockquote {
 
   header nav {
     padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .nav-right {
+    gap: 1rem;
   }
 
   main {
