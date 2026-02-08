@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(test -d:*)",
+      "Bash(test:*)",
+      "Bash(hugo version:*)",
+      "Bash(node --version:*)",
+      "Bash(npm --version:*)",
+      "Bash(go version:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(brew install:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(hugo new site:*)",
+      "Bash(hugo:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(chmod:*)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:freedium.cfd)",
+      "WebFetch(domain:webcache.googleusercontent.com)",
+      "Skill(agent-browser)",
+      "Bash(DISPLAY=:0 agent-browser:*)",
+      "Bash(curl:*)",
+      "Bash(agent-browser eval:*)",
+      "Bash(agent-browser close:*)",
+      "Bash(ls:*)",
+      "Skill(browser)",
+      "Bash(kill:*)",
+      "Bash(agent-browser open:*)",
+      "Bash(agent-browser screenshot:*)"
+    ]
+  }
+}
