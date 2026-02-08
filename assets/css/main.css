@@ -136,25 +136,24 @@ footer {
   margin-top: 3rem;
 }
 
-.footer-line {
+.footer-content {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 1rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 1.5rem;
+  text-align: center;
 }
 
-.footer-line span {
+footer p {
   font-size: 0.85rem;
   color: var(--text-muted);
+  margin: 0.75rem 0 0;
 }
 
 /* --- Social Links (Footer) --- */
 .social-links {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 .social-links a {
