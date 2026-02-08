@@ -1,9 +1,11 @@
-.PHONY: up publish-medium
+.PHONY: up add-post
 
 up:
 	hugo server -D --navigateToChanged
 
-publish-medium:
-	@test -n "$(POST)" || (echo "Usage: make publish-medium POST=content/posts/my-post.md" && exit 1)
-	@test -n "$$MEDIUM_TOKEN" || (echo "Error: MEDIUM_TOKEN env var is required" && exit 1)
-	bash scripts/publish-medium.sh $(POST)
+add-post:
+	@read -p "Post title: " title; \
+	slug=$$(echo "$$title" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/--*/-/g; s/^-//; s/-$$//'); \
+	file="content/posts/$$(date +%Y-%m-%d)-$$slug.md"; \
+	hugo new "$$file"; \
+	echo "Created: $$file"
