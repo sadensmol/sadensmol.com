@@ -9,6 +9,8 @@ title: "About"
 AI | Games | Fintech | Go | Python | Typescript<br>
 Georgia, Tbilisi
 
+<button onclick="window.print()" class="download-cv-btn">Download CV</button>
+
 <div style="clear:both;"></div>
 
 ## Objective
@@ -30,7 +32,6 @@ I am seeking a role that offers opportunities for professional development, coll
 - AI, Games, Fintech (crypto, trading & investing, embedded finance)
 - Go(Golang)/Typescript/Python
 - Microservice based and distributed architectures, high load
-
 - LLMs, agentic workflows, AI-assisted coding
 
 ## Professional Experience
