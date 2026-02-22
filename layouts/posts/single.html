@@ -1,4 +1,10 @@
 {{ define "main" }}
+{{ with .TableOfContents }}
+<aside class="toc-sidebar">
+  <h2>Table of Contents</h2>
+  {{ . }}
+</aside>
+{{ end }}
 <article class="post">
   <header class="post-header">
     <h1>{{ .Title }}</h1>
@@ -14,15 +20,40 @@
     </div>
   </header>
 
-  {{ with .TableOfContents }}
-  <aside class="toc">
-    <h2>Contents</h2>
-    {{ . }}
-  </aside>
-  {{ end }}
-
   <div class="post-content">
     {{ .Content }}
   </div>
 </article>
+<script>
+(function() {
+  const toc = document.querySelector('.toc-sidebar');
+  if (!toc) return;
+
+  const links = toc.querySelectorAll('a');
+  const headings = [];
+
+  links.forEach(function(link) {
+    const id = decodeURIComponent(link.getAttribute('href').slice(1));
+    const heading = document.getElementById(id);
+    if (heading) headings.push({ el: heading, link: link });
+  });
+
+  function updateActive() {
+    let current = null;
+    const offset = 100;
+
+    for (let i = 0; i < headings.length; i++) {
+      if (headings[i].el.getBoundingClientRect().top <= offset) {
+        current = headings[i];
+      }
+    }
+
+    links.forEach(function(link) { link.classList.remove('active'); });
+    if (current) current.link.classList.add('active');
+  }
+
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+})();
+</script>
 {{ end }}

@@ -3,11 +3,53 @@
 <head>
   {{- partial "head.html" . -}}
 </head>
-<body>
+<body id="top">
   {{- partial "header.html" . -}}
   <main>
     {{- block "main" . }}{{- end }}
   </main>
+  <div class="scroll-to-top">
+    <a href="#top">&uarr; Scroll to top</a>
+  </div>
   {{- partial "footer.html" . -}}
+  <script>
+  (function() {
+    var el = document.querySelector('.scroll-to-top');
+    if (el) {
+      function toggleScroll() {
+        el.classList.toggle('visible', document.documentElement.scrollHeight > window.innerHeight);
+      }
+      toggleScroll();
+      window.addEventListener('resize', toggleScroll, { passive: true });
+    }
+
+    // Theme toggle
+    var btn = document.querySelector('.theme-toggle');
+    if (!btn) return;
+
+    function getEffectiveTheme() {
+      var saved = document.documentElement.getAttribute('data-theme');
+      if (saved) return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function updateIcon() {
+      var theme = getEffectiveTheme();
+      btn.querySelector('.icon-sun').style.display = theme === 'dark' ? 'block' : 'none';
+      btn.querySelector('.icon-moon').style.display = theme === 'light' ? 'block' : 'none';
+    }
+
+    btn.addEventListener('click', function() {
+      var current = getEffectiveTheme();
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateIcon();
+    });
+
+    updateIcon();
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateIcon);
+  })();
+  </script>
 </body>
 </html>

@@ -11,9 +11,21 @@
   --max-width: 720px;
 }
 
-/* --- Dark Theme --- */
+/* --- Dark Theme (forced) --- */
+:root[data-theme="dark"] {
+  --bg: #111113;
+  --bg-secondary: #1c1c1f;
+  --text: #e4e4e7;
+  --text-muted: #a1a1aa;
+  --accent: #60a5fa;
+  --accent-hover: #93bbfd;
+  --border: #2e2e32;
+  --code-bg: #1e1e22;
+}
+
+/* --- Dark Theme (system default) --- */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #111113;
     --bg-secondary: #1c1c1f;
     --text: #e4e4e7;
@@ -252,31 +264,90 @@ footer p {
   font-size: 0.8rem;
 }
 
-/* --- TOC --- */
-.toc {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 2rem;
+/* --- TOC Sidebar --- */
+.toc-sidebar {
+  position: fixed;
+  top: 6rem;
+  left: calc((100vw - var(--max-width)) / 2 - 260px);
+  width: 220px;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
 }
 
-.toc h2 {
-  font-size: 0.95rem;
+.toc-sidebar h2 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
   margin-top: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
-.toc nav ul {
-  margin-bottom: 0;
+.toc-sidebar nav > ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.toc nav ul ul {
-  margin-bottom: 0;
+.toc-sidebar nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
-.toc a {
-  font-size: 0.9rem;
+.toc-sidebar nav ul ul {
+  padding-left: 0.75rem;
+  margin: 0;
+}
+
+.toc-sidebar nav li {
+  margin: 0;
+  padding: 0;
+}
+
+.toc-sidebar nav a {
+  display: block;
+  padding: 0.25rem 0 0.25rem 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  border-left: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.toc-sidebar nav a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.toc-sidebar nav a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+
+/* Show TOC inline on smaller screens */
+@media (max-width: 1100px) {
+  .toc-sidebar {
+    position: static;
+    width: 100%;
+    max-height: none;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .toc-sidebar nav a {
+    border-left: none;
+    padding-left: 0;
+  }
+
+  .toc-sidebar nav a.active {
+    border-left: none;
+  }
 }
 
 /* --- Code Blocks --- */
@@ -326,6 +397,45 @@ blockquote {
 .download-cv-btn:hover {
   background: var(--accent);
   color: var(--bg);
+}
+
+/* --- Theme Toggle --- */
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.theme-toggle:hover {
+  color: var(--accent);
+}
+
+.theme-toggle svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* --- Scroll to Top --- */
+.scroll-to-top {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  text-align: right;
+  display: none;
+}
+
+.scroll-to-top.visible {
+  display: block;
+}
+
+.scroll-to-top a {
+  font-size: 0.85rem;
+  color: var(--accent);
 }
 
 /* --- Print Styles --- */
