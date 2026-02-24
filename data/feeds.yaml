@@ -1,0 +1,87 @@
+# Interesting Blogs & RSS Feeds
+#
+# Add feeds below. Each entry needs:
+#   - name:  Display name for the source
+#   - url:   RSS/Atom feed URL
+#   - site:  (optional) Link to the blog's homepage
+
+feeds:
+  - name: Applied Go
+    url: https://appliedgo.net/index.xml
+    site: https://appliedgo.net
+
+  - name: matklad
+    url: https://matklad.github.io/feed.xml
+    site: https://matklad.github.io
+
+  - name: VictoriaMetrics
+    url: https://victoriametrics.com/index.xml
+    site: https://victoriametrics.com
+
+  - name: Fabien Sanglard
+    url: https://fabiensanglard.net/rss.xml
+    site: https://fabiensanglard.net
+
+  - name: Boris Tane
+    url: https://boristane.com/rss.xml
+    site: https://boristane.com
+
+  - name: Paul Hammant
+    url: https://feeds.feedburner.com/paulhammant
+    site: https://paulhammant.com
+
+  - name: Yevgeniy Brikman
+    url: https://www.ybrikman.com/feed.xml
+    site: https://www.ybrikman.com
+
+  - name: Umputun
+    url: https://p.umputun.com/en/index.xml
+    site: https://p.umputun.com
+
+  - name: Anthropic
+    url: https://www.anthropic.com/rss.xml
+    site: https://www.anthropic.com
+
+  - name: OpenAI
+    url: https://openai.com/blog/rss.xml
+    site: https://openai.com/blog
+
+  - name: Google DeepMind
+    url: https://deepmind.google/blog/rss.xml
+    site: https://deepmind.google/blog
+
+  - name: Simon Willison
+    url: https://simonwillison.net/atom/everything/
+    site: https://simonwillison.net
+
+  - name: The Go Blog
+    url: https://go.dev/blog/feed.atom
+    site: https://go.dev/blog
+
+  - name: Armin Ronacher
+    url: https://lucumr.pocoo.org/feed.atom
+    site: https://lucumr.pocoo.org
+
+  - name: Overreacted
+    url: https://overreacted.io/rss.xml
+    site: https://overreacted.io
+
+  - name: Chain of Thought
+    url: https://every.to/chain-of-thought/feed.xml
+    site: https://every.to/chain-of-thought
+
+  - name: Sequoia Capital
+    url: https://www.sequoiacap.com/feed/
+    site: https://www.sequoiacap.com
+
+  - name: Y Combinator
+    url: https://www.ycombinator.com/blog/rss
+    site: https://www.ycombinator.com/blog
+
+  - name: The Rundown AI
+    url: https://www.therundown.ai/feed
+    site: https://www.therundown.ai
+
+  - name: Technical Writing
+    url: https://technicalwriting.dev/rss.xml
+    site: https://technicalwriting.dev

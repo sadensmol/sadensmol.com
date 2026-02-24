@@ -202,6 +202,41 @@ footer p {
   white-space: nowrap;
 }
 
+/* --- Interesting Blogs (Homepage) --- */
+.interesting-blogs h2 {
+  margin-top: 2.5rem;
+}
+
+.interesting-blogs ul {
+  list-style: none;
+  padding: 0;
+}
+
+.interesting-blogs li {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.3rem 0;
+}
+
+.interesting-blogs time {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 5.5rem;
+}
+
+.interesting-blogs .feed-source {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.interesting-blogs .feeds-loading {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
 /* --- Blog Listing --- */
 .posts-year h2 {
   margin-top: 2rem;
@@ -480,7 +515,8 @@ blockquote {
   }
 
   .recent-posts li,
-  .post-list li {
+  .post-list li,
+  .interesting-blogs li {
     flex-direction: column;
     gap: 0;
   }

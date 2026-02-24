@@ -1,0 +1,12 @@
+{{ with .Site.Data.feeds.feeds }}
+{{ $feedsJSON := slice }}
+{{ range . }}
+  {{ $feedsJSON = $feedsJSON | append (dict "name" .name "url" .url "site" .site) }}
+{{ end }}
+<section class="interesting-blogs" id="interesting-blogs" data-feeds='{{ $feedsJSON | jsonify }}'>
+  <h2>Interesting Blogs</h2>
+  <ul>
+    <li class="feeds-loading">Loading recent posts...</li>
+  </ul>
+</section>
+{{ end }}

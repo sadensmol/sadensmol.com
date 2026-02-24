@@ -12,6 +12,8 @@
     <a href="#top">&uarr; Scroll to top</a>
   </div>
   {{- partial "footer.html" . -}}
+  {{ $feeds := resources.Get "js/feeds.js" | minify | fingerprint }}
+  <script src="{{ $feeds.RelPermalink }}" integrity="{{ $feeds.Data.Integrity }}" defer></script>
   <script>
   (function() {
     var el = document.querySelector('.scroll-to-top');
