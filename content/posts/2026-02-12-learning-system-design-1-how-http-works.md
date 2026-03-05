@@ -11,6 +11,8 @@ This is the first article in my "Learning System Design" series where I'm going 
 
 We use it every day, but how often do we actually think about what's happening under the hood?
 
+![How HTTP Works](/images/posts/how-http-works-hero.jpg)
+
 ## Request-Response. Simple as it is.
 
 HTTP is a **request-response** protocol. Client sends a request, server returns a response. Every interaction follows this pattern — no surprises here.
@@ -98,6 +100,8 @@ For HTTPS (and you should always use HTTPS!) there's an additional TLS handshake
 
 So the full sequence is: **TCP handshake → TLS handshake → HTTP request**. That's at least 2-3 round trips before you even start exchanging data. This is why HTTP versions matter!
 
+![HTTP request lifecycle — DNS, TCP, TLS, then HTTP](/images/posts/how-http-works-lifecycle.png)
+
 ## HTTP Versions — the Evolution
 
 ### HTTP/1.0
@@ -117,6 +121,8 @@ But there's still a catch — TCP underneath. A single packet loss stalls ALL st
 The latest evolution. Runs over **QUIC** which is UDP-based instead of TCP. This eliminates TCP-level head-of-line blocking — if one stream loses a packet, other streams are not affected!
 
 QUIC also combines transport and TLS handshake into one round trip. And it supports **connection migration** — your connection survives when you switch from Wi-Fi to cellular. Pretty cool for mobile!
+
+![HTTP versions evolution — from 1.0 to HTTP/3 over QUIC](/images/posts/how-http-works-versions.png)
 
 ## Caching — Don't Ask Twice
 

@@ -11,6 +11,8 @@ Third part of the "Learning System Design" series! This time — rate limiting. 
 
 The concept is dead simple — control how many requests a client can make in a given time window. But the devil is in the details. There are multiple algorithms, each with different trade-offs, and picking the wrong one can either leave your system unprotected or annoy your users with unnecessary rejections.
 
+![Rate Limiting](/images/posts/rate-limiting-hero.jpg)
+
 ## Why Rate Limiting?
 
 Your API can handle, say, 1000 requests per second. What happens when someone sends 10,000? Everything slows down, legitimate users suffer, and your on-call engineer gets paged at 3am.
@@ -30,6 +32,8 @@ Think of it as an arcade — you get tokens at a steady rate, you can save them 
 Two parameters control everything: **bucket size** (max burst allowed) and **refill rate** (sustained throughput). A bucket of 100 with a refill of 10/sec means you can burst 100 requests instantly, then sustain 10/sec after that.
 
 This is what Twitter (X) uses — "300 requests per 15 minutes" is basically a token bucket with 300 capacity and 0.33 tokens/sec refill.
+
+![Token bucket algorithm — requests consume tokens, refill at fixed rate](/images/posts/rate-limiting-token-bucket.png)
 
 **Pros:** allows natural traffic bursts, simple, memory-efficient (just 2 values to store).
 **Cons:** large bucket sizes can overwhelm your backend during a burst.
@@ -89,6 +93,8 @@ If you're unsure — **Sliding Window Counter** is the safe default. It's what m
 Everything above works fine on a single server. Add a load balancer with 3 servers behind it, and your 100 req/min limit becomes 300 — each server counts independently.
 
 The standard fix: use **Redis as a centralized counter**. All servers check the same shared state. It's accurate but now Redis is a critical dependency and every request has network latency.
+
+![Distributed rate limiting with centralized Redis counter](/images/posts/rate-limiting-distributed.png)
 
 A smarter approach is **token pre-fetching** — each server grabs a batch of tokens from Redis in advance (say, 100 at a time) and serves requests from the local pool. Extremely fast, no per-request network call. The trade-off: if a server crashes with unused tokens, those are wasted.
 

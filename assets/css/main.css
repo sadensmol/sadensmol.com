@@ -96,15 +96,19 @@ ul, ol {
 img {
   max-width: 100%;
   height: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Invert diagram images in dark theme so they remain readable */
-:root[data-theme="dark"] article img {
+/* Invert diagram images (PNGs) in dark theme so they remain readable */
+/* Only targets .png — hero photos (.jpg) stay untouched */
+:root[data-theme="dark"] article img[src$=".png"] {
   filter: invert(0.88) hue-rotate(180deg);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) article img {
+  :root:not([data-theme="light"]) article img[src$=".png"] {
     filter: invert(0.88) hue-rotate(180deg);
   }
 }

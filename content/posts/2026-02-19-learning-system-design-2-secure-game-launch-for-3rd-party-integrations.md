@@ -11,6 +11,8 @@ Second article in the "Learning System Design" series! This time we're tackling 
 
 If you've ever worked in iGaming or any B2B game provider setup, you know the drill — your game doesn't live on your own website. It gets launched inside someone else's platform, via redirect or iframe. And you need to make sure that the session is secure, can't be hijacked, and works correctly even when things go wrong.
 
+![Secure Game Launch](/images/posts/secure-game-launch-hero.jpg)
+
 ## The Setup
 
 Here's the situation. An operator (casino, gaming platform, whatever) wants to offer your game to their players. The flow looks like this:
@@ -49,6 +51,8 @@ Player opens launchURL (gsID in URL)
   → sessionToken stored in JS memory only
   → All API calls use sessionToken
 ```
+
+![Secure game launch flow — from operator to session token](/images/posts/secure-game-launch-flow.png)
 
 Why JS memory and not cookies or localStorage?
 
@@ -102,6 +106,8 @@ Someone embeds your game in a hidden iframe on a malicious page. The player thin
 ### Race Condition on `/session/init` — Needs Atomicity
 
 Two requests with the same gsID hit `/session/init` at the exact same time. Without atomic session creation, both could succeed. Use a database-level uniqueness constraint or distributed lock — only the first write wins, second gets 409.
+
+![Attack vectors — what's safe by design and what needs mitigation](/images/posts/secure-game-launch-attacks.png)
 
 ## The Scorecard
 
