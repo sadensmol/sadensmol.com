@@ -98,6 +98,17 @@ img {
   height: auto;
 }
 
+/* Invert diagram images in dark theme so they remain readable */
+:root[data-theme="dark"] article img {
+  filter: invert(0.88) hue-rotate(180deg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) article img {
+    filter: invert(0.88) hue-rotate(180deg);
+  }
+}
+
 hr {
   border: none;
   border-top: 1px solid var(--border);
