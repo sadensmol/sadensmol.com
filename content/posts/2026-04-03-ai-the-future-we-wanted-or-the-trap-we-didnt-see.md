@@ -2,7 +2,7 @@
 title = "AI: The Future We Wanted or the Trap We Didn't See?"
 slug = 'ai-the-future-we-wanted-or-the-trap-we-didnt-see'
 date = 2026-04-03
-draft = true
+draft = false
 description = 'The developer AI debate is a false binary. History and neuroscience reveal what we are actually losing.'
 tags = ['ai', 'software-development', 'opinion']
 +++
