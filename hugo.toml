@@ -2,6 +2,7 @@ baseURL = "https://sadensmol.com/"
 languageCode = "en-us"
 title = "sadensmol"
 copyright = "sadensmol"
+enableRobotsTXT = true
 
 [permalinks]
   [permalinks.page]
@@ -31,4 +32,7 @@ copyright = "sadensmol"
   section = ["HTML", "RSS"]
 
 [params]
-  description = "Personal blog and notes by sadensmol"
+  description = "Personal blog and notes by Denis Sazonov — backend engineer working on fintech, iGaming, and distributed systems in Go."
+  author = "Denis Sazonov"
+  image = "/images/profile.jpg"
+  twitter_handle = "sadensmol"
