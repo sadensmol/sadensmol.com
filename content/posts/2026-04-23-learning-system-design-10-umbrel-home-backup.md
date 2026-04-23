@@ -163,6 +163,30 @@ Classic grandfather-father-son. Every backup tool on the planet converged on it.
 
 Storage tiering is a lifecycle policy on the object store — recent chunks on standard, 30-day-old on infrequent-access, year-old on cold archive. No custom code for it.
 
+## Step 8: Restore — The Other Half of the Design
+
+A backup system that can't restore is a compression tool with anxiety attached. So: how does the data actually come back?
+
+The client picks what to restore — full device, one app, one folder, one file, or any of those "as of time T." The flow is always the same shape:
+
+1. Fetch the snapshot root(s) covering the target.
+2. Pull the **encrypted manifest**, unwrap the KEK with the device's private key, decrypt the manifest locally. Now the client knows which chunks are needed.
+3. Request signed URLs for those chunks from the ingest API.
+4. Download ciphertext chunks directly from object storage, AEAD-decrypt them on the device.
+5. Write the resulting plaintext files back into the app data directories; for DBs, load the base and replay change-log frames up to the snapshot's fence.
+
+The **metadata-first** ordering is what makes restore feel fast. DB replay and manifest decryption are kilobytes-to-megabytes of work. The user sees their photo library structure, album titles, folder tree, and note index in *minutes*, not hours. Media bytes stream lazily in the background. Open an un-restored photo? The client fetches just that file's chunks on demand and the rest keeps downloading. Exactly how Immich, Google Photos, and iCloud Photos behave — the first frame of the library is cheap to rebuild.
+
+**Per-app restore** falls out of the resource-group model for free. Each Umbrel app (Memos, Vaultwarden, Immich, Rocket.Chat) has its own manifest inside the snapshot. A restore can name one or many. "Bring Memos back but leave Immich alone" is just "hydrate the Memos resource group." A failure in one app's restore doesn't block the others.
+
+**Selective restore** is the same mechanism at a finer grain — one file, one folder, one DB collection. You're just walking a smaller subtree of the manifest.
+
+**Time-travel restore** is trivial in this design because snapshots are immutable. "Restore my library as it was on March 3rd" = pick the latest snapshot ≤ March 3rd and hydrate. No per-file version chains, no rewinding a log from the present. Undeleting something from two weeks ago is the same operation — the old snapshot still references the chunks; chunk hashes haven't changed; they're downloadable.
+
+The one restore case that's genuinely different is **full device restore onto a brand-new box** after a total loss. The user installs the agent, enters their recovery phrase, and the phrase regenerates the Master Secret → KEK, which lets the agent unwrap every DEK and start hydrating. The fresh device doesn't even need a pairing flow — the recovery phrase *is* the pairing. Once the device is running, new device pubkeys can be enrolled normally through a paired phone.
+
+One honest edge case: if the user wants DB as-of-time-T but blobs as-of-now (an "inconsistent mode"), the UI should flag that some DB references may dangle. It's a valid thing to want sometimes — "restore my Memos notes to yesterday's state but keep today's photos" — it just can't be the default silently, because silent dangling references are exactly what the fence mechanism exists to prevent.
+
 ## What the Server Actually Sees
 
 Let's do the paranoia check. After all the layering, here's what the cloud operator can see:
@@ -191,6 +215,7 @@ The design stacks a few well-known ideas into something that actually works unde
 - **Oplog tailing + WAL shipping** for live Mongo and SQLite backups with near-zero RPO, no stopping the writer.
 - **Monotonic fence watermarks** injected into each DB's change log — one trick to keep DB and blob restores point-in-time consistent without a global snapshot.
 - **Immutable content-addressed snapshots** so time-travel, trash, and retention are all just "which snapshots are pinned."
+- **Metadata-first restore** so the user sees their library structure back in minutes while bulk media streams lazily in the background, with per-app and selective-file granularity as a natural consequence of the resource-group model.
 
 None of these ideas are new on their own. What's fun is seeing how they compose: every feature the user sees (time-travel, per-app restore, phone access, device revocation, undelete) is a natural consequence of a small set of primitives instead of its own bespoke code path. That's usually a sign the design is in a good shape.
 
