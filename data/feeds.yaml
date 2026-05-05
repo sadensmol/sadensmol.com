@@ -85,3 +85,7 @@ feeds:
   - name: Technical Writing
     url: https://technicalwriting.dev/rss.xml
     site: https://technicalwriting.dev
+
+  - name: AWS What's New
+    url: https://aws.amazon.com/about-aws/whats-new/recent/feed/
+    site: https://aws.amazon.com/new
