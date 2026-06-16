@@ -89,3 +89,7 @@ feeds:
   - name: AWS What's New
     url: https://aws.amazon.com/about-aws/whats-new/recent/feed/
     site: https://aws.amazon.com/new
+
+  - name: Addy Osmani
+    url: https://addyosmani.com/rss.xml
+    site: https://addyosmani.com
