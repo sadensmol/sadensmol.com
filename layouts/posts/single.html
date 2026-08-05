@@ -55,5 +55,44 @@
   window.addEventListener('scroll', updateActive, { passive: true });
   updateActive();
 })();
+
+// Image lightbox — click any post image to view it full size
+(function() {
+  const content = document.querySelector('.post-content');
+  if (!content) return;
+  const imgs = content.querySelectorAll('img');
+  if (!imgs.length) return;
+
+  const box = document.createElement('div');
+  box.className = 'lightbox';
+  const full = document.createElement('img');
+  const close = document.createElement('button');
+  close.className = 'lightbox-close';
+  close.setAttribute('aria-label', 'Close');
+  close.innerHTML = '&times;';
+  box.appendChild(full);
+  box.appendChild(close);
+  document.body.appendChild(box);
+
+  function open(img) {
+    full.src = img.currentSrc || img.src;
+    full.alt = img.alt || '';
+    box.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function hide() {
+    box.classList.remove('open');
+    document.body.style.overflow = '';
+    full.removeAttribute('src');
+  }
+
+  imgs.forEach(function(img) {
+    img.addEventListener('click', function() { open(img); });
+  });
+  box.addEventListener('click', hide);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && box.classList.contains('open')) hide();
+  });
+})();
 </script>
 {{ end }}
