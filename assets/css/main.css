@@ -546,6 +546,71 @@ blockquote {
   color: var(--text);
 }
 
+/* --- Projects --- */
+.projects-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.project-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.project-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.project-thumb-link {
+  display: block;
+}
+
+.project-thumb {
+  width: 100%;
+  height: auto;
+  margin: 0;
+  display: block;
+  border-bottom: 1px solid var(--border);
+}
+
+.project-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.project-name {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.project-tagline {
+  margin: 0.15rem 0 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.project-desc {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+}
+
+.project-tags {
+  margin-bottom: 1rem;
+}
+
+.project-links {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 /* --- Download CV Button --- */
 .download-cv-btn {
   display: inline-block;

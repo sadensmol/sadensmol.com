@@ -1,0 +1,41 @@
+{{ define "main" }}
+<article>
+  <h1>{{ .Title }}</h1>
+  {{ .Content }}
+
+  <div class="projects-grid">
+    {{- range .Params.projects }}
+    {{- $name := .name }}
+    {{- $image := .image }}
+    {{- $primary := "" }}
+    {{- with .links }}{{ $primary = (index . 0).url }}{{ end }}
+    <div class="project-card">
+      {{- with $image }}
+      {{- if $primary }}
+      <a href="{{ $primary }}" target="_blank" rel="noopener" class="project-thumb-link">
+        <img src="{{ . }}" alt="{{ $name }} screenshot" loading="lazy" class="project-thumb">
+      </a>
+      {{- else }}
+      <img src="{{ . }}" alt="{{ $name }} screenshot" loading="lazy" class="project-thumb">
+      {{- end }}
+      {{- end }}
+      <div class="project-body">
+        <h2 class="project-name">{{ $name }}</h2>
+        {{- with .tagline }}<p class="project-tagline">{{ . }}</p>{{ end }}
+        <p class="project-desc">{{ .description }}</p>
+        {{- with .tags }}
+        <div class="tags project-tags">
+          {{- range . }}<span class="tag">{{ . }}</span>{{ end }}
+        </div>
+        {{- end }}
+        {{- with .links }}
+        <div class="project-links">
+          {{- range . }}<a href="{{ .url }}" target="_blank" rel="noopener">{{ .text }} &rarr;</a>{{ end }}
+        </div>
+        {{- end }}
+      </div>
+    </div>
+    {{- end }}
+  </div>
+</article>
+{{ end }}
