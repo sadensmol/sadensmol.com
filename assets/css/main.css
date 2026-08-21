@@ -308,6 +308,24 @@ footer p {
   font-size: 0.9rem;
 }
 
+.feeds-more {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.35em 0.75em;
+  font-size: 0.8rem;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.feeds-more:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
 /* --- Blog Listing --- */
 .posts-year h2 {
   margin-top: 2rem;

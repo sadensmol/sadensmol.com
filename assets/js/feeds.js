@@ -3,12 +3,15 @@
   if (!container) return;
 
   var API = "https://api.rss2json.com/v1/api.json?rss_url=";
-  var CACHE_KEY = "interesting-blogs-cache";
+  var CACHE_KEY = "interesting-blogs-cache-v2";
   var CACHE_TTL = 24 * 60 * 60 * 1000;
-  var MAX_PER_FEED = 3;
-  var MAX_TOTAL = 20;
+  var MAX_PER_FEED = 12;
+  var PAGE_SIZE = 20;
 
   var feedsEl = container.querySelector("ul");
+  var moreBtn = container.querySelector(".feeds-more");
+  var visibleItems = [];
+  var shown = 0;
   var feeds;
   try {
     feeds = JSON.parse(container.getAttribute("data-feeds"));
@@ -88,27 +91,48 @@
     return result;
   }
 
+  function showMore() {
+    var next = visibleItems.slice(shown, shown + PAGE_SIZE);
+    next.forEach(function (item) {
+      feedsEl.appendChild(createItem(item));
+    });
+    shown += next.length;
+
+    if (moreBtn) {
+      var remaining = visibleItems.length - shown;
+      if (remaining > 0) {
+        moreBtn.hidden = false;
+        moreBtn.textContent = "Load more (" + remaining + ")";
+      } else {
+        moreBtn.hidden = true;
+      }
+    }
+  }
+
   function renderItems(allItems) {
     allItems.sort(function (a, b) {
       return new Date(b.date) - new Date(a.date);
     });
-    allItems = limitPerSource(allItems);
-    allItems = allItems.slice(0, MAX_TOTAL);
+    visibleItems = limitPerSource(allItems);
+    shown = 0;
 
     while (feedsEl.firstChild) {
       feedsEl.removeChild(feedsEl.firstChild);
     }
 
-    if (!allItems.length) {
+    if (!visibleItems.length) {
       var li = document.createElement("li");
       li.textContent = "No recent posts found.";
       feedsEl.appendChild(li);
+      if (moreBtn) moreBtn.hidden = true;
       return;
     }
 
-    allItems.forEach(function (item) {
-      feedsEl.appendChild(createItem(item));
-    });
+    showMore();
+  }
+
+  if (moreBtn) {
+    moreBtn.addEventListener("click", showMore);
   }
 
   function loadCache() {
@@ -139,7 +163,7 @@
   var completed = 0;
 
   feeds.forEach(function (feed) {
-    fetch(API + encodeURIComponent(feed.url))
+    fetch(API + encodeURIComponent(feed.url) + "&count=" + MAX_PER_FEED)
       .then(function (r) {
         return r.json();
       })
