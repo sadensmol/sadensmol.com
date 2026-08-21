@@ -2,44 +2,61 @@
   var container = document.getElementById("interesting-blogs");
   if (!container) return;
 
-  var API = "https://api.rss2json.com/v1/api.json?rss_url=";
-  var CACHE_KEY = "interesting-blogs-cache-v2";
-  var CACHE_TTL = 24 * 60 * 60 * 1000;
-  var MAX_PER_FEED = 12;
-  var PAGE_SIZE = 20;
-
-  var feedsEl = container.querySelector("ul");
   var moreBtn = container.querySelector(".feeds-more");
-  var visibleItems = [];
-  var shown = 0;
-  var feeds;
-  try {
-    feeds = JSON.parse(container.getAttribute("data-feeds"));
-  } catch (e) {
-    return;
-  }
+  var feedsEl = container.querySelector("ul");
+  if (!moreBtn || !feedsEl) return;
 
-  function parseDate(str) {
-    if (!str) return new Date(0);
-    var d = new Date(str);
-    return isNaN(d.getTime()) ? new Date(0) : d;
+  var src = container.getAttribute("data-src");
+  var packSize = parseInt(container.getAttribute("data-pack-size"), 10) || 20;
+
+  // The first pack is rendered server-side, so start after it.
+  var shownPacks = 1;
+  var packs = null;
+  var loading = false;
+
+  // Entries arrive sorted newest first. Deal them into packs of packSize that
+  // hold at most one entry per blog, so a single prolific source can never take
+  // over a pack. Anything skipped falls into a later pack.
+  function buildPacks(all) {
+    var remaining = all;
+    var result = [];
+
+    while (remaining.length) {
+      var pack = [];
+      var used = {};
+      var leftover = [];
+
+      for (var i = 0; i < remaining.length; i++) {
+        var item = remaining[i];
+        if (pack.length < packSize && !used[item.source]) {
+          used[item.source] = true;
+          pack.push(item);
+        } else {
+          leftover.push(item);
+        }
+      }
+
+      result.push(pack);
+      remaining = leftover;
+    }
+
+    return result;
   }
 
   function createItem(item) {
     var li = document.createElement("li");
 
-    if (item.date) {
-      var d = new Date(item.date);
-      if (d.getTime()) {
-        var time = document.createElement("time");
-        time.setAttribute("datetime", d.toISOString().split("T")[0]);
-        time.textContent = d.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-        li.appendChild(time);
-      }
+    var d = new Date(item.date);
+    if (d.getTime()) {
+      var time = document.createElement("time");
+      time.setAttribute("datetime", item.date);
+      time.textContent = d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+      li.appendChild(time);
     }
 
     var span = document.createElement("span");
@@ -54,7 +71,7 @@
 
     var source = document.createElement("span");
     source.className = "feed-source";
-    source.appendChild(document.createTextNode(" \u2014 "));
+    source.appendChild(document.createTextNode(" — "));
     var sourceLink = document.createElement("a");
     sourceLink.href = item.site;
     sourceLink.target = "_blank";
@@ -67,126 +84,48 @@
     return li;
   }
 
-  function limitPerSource(items) {
-    var result = [];
-    var sourceDays = {};
-    var sourceCount = {};
-
-    items.forEach(function (item) {
-      var key = item.source;
-      var day = new Date(item.date).toISOString().split("T")[0];
-      var dayKey = key + "|" + day;
-
-      if (!sourceCount[key]) sourceCount[key] = 0;
-      if (!sourceDays[dayKey]) sourceDays[dayKey] = 0;
-
-      if (sourceCount[key] >= MAX_PER_FEED) return;
-      if (sourceDays[dayKey] >= 1) return;
-
-      sourceDays[dayKey]++;
-      sourceCount[key]++;
-      result.push(item);
-    });
-
-    return result;
-  }
-
-  function showMore() {
-    var next = visibleItems.slice(shown, shown + PAGE_SIZE);
-    next.forEach(function (item) {
-      feedsEl.appendChild(createItem(item));
-    });
-    shown += next.length;
-
-    if (moreBtn) {
-      var remaining = visibleItems.length - shown;
-      if (remaining > 0) {
-        moreBtn.hidden = false;
-        moreBtn.textContent = "Load more (" + remaining + ")";
-      } else {
-        moreBtn.hidden = true;
-      }
-    }
-  }
-
-  function renderItems(allItems) {
-    allItems.sort(function (a, b) {
-      return new Date(b.date) - new Date(a.date);
-    });
-    visibleItems = limitPerSource(allItems);
-    shown = 0;
-
-    while (feedsEl.firstChild) {
-      feedsEl.removeChild(feedsEl.firstChild);
-    }
-
-    if (!visibleItems.length) {
-      var li = document.createElement("li");
-      li.textContent = "No recent posts found.";
-      feedsEl.appendChild(li);
-      if (moreBtn) moreBtn.hidden = true;
+  function showNextPack() {
+    var pack = packs[shownPacks];
+    if (!pack) {
+      moreBtn.remove();
       return;
     }
 
-    showMore();
+    pack.forEach(function (item) {
+      feedsEl.appendChild(createItem(item));
+    });
+    shownPacks++;
+
+    if (shownPacks >= packs.length) moreBtn.remove();
   }
 
-  if (moreBtn) {
-    moreBtn.addEventListener("click", showMore);
-  }
-
-  function loadCache() {
-    try {
-      var raw = localStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      var cache = JSON.parse(raw);
-      if (Date.now() - cache.ts > CACHE_TTL) return null;
-      return cache.items;
-    } catch (e) {
-      return null;
+  moreBtn.addEventListener("click", function () {
+    if (packs) {
+      showNextPack();
+      return;
     }
-  }
+    if (loading) return;
 
-  function saveCache(items) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), items: items }));
-    } catch (e) {}
-  }
+    loading = true;
+    moreBtn.disabled = true;
+    moreBtn.textContent = "Loading...";
 
-  var cached = loadCache();
-  if (cached) {
-    renderItems(cached);
-    return;
-  }
-
-  var allItems = [];
-  var completed = 0;
-
-  feeds.forEach(function (feed) {
-    fetch(API + encodeURIComponent(feed.url) + "&count=" + MAX_PER_FEED)
+    fetch(src)
       .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
-      .then(function (data) {
-        if (data.status !== "ok" || !data.items) return;
-        var items = data.items.slice(0, MAX_PER_FEED).map(function (entry) {
-          return {
-            title: entry.title,
-            link: entry.link,
-            date: parseDate(entry.pubDate).toISOString(),
-            source: feed.name,
-            site: feed.site,
-          };
-        });
-        allItems = allItems.concat(items);
+      .then(function (all) {
+        packs = buildPacks(all);
+        moreBtn.disabled = false;
+        moreBtn.textContent = "Load more";
+        showNextPack();
       })
-      .catch(function () {})
+      .catch(function () {
+        moreBtn.textContent = "Could not load more";
+      })
       .finally(function () {
-        completed++;
-        if (completed === feeds.length) {
-          saveCache(allItems);
-          renderItems(allItems);
-        }
+        loading = false;
       });
   });
 })();

@@ -1,0 +1,8 @@
+{{/* XML text nodes arrive as a plain string, or as a map when the element carries
+     attributes (e.g. <title type="html">). Return the text either way. */}}
+{{ $v := . }}
+{{ if reflect.IsSlice $v }}{{ $v = index $v 0 }}{{ end }}
+{{ if reflect.IsMap $v }}{{ $v = index $v "#text" }}{{ end }}
+{{ $out := "" }}
+{{ with $v }}{{ $out = trim (printf "%v" .) " \n\t\r" }}{{ end }}
+{{ return $out }}

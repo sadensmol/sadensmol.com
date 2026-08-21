@@ -1,13 +1,111 @@
-{{ with .Site.Data.feeds.feeds }}
-{{ $feedsJSON := slice }}
-{{ range . }}
-  {{ $feedsJSON = $feedsJSON | append (dict "name" .name "url" .url "site" .site) }}
+{{/*
+  Interesting Blogs.
+
+  Feeds are fetched and parsed at BUILD time, so visitors make no network calls
+  and no third-party API can rate-limit us. A feed that is down, slow or
+  malformed is skipped with a warning; the rest of the list still renders.
+
+  The first pack is rendered here as plain HTML. The full list is published as a
+  JSON file that assets/js/feeds.js fetches only when "Load more" is clicked.
+*/}}
+{{ $perFeed := 6 }}   {{/* newest entries kept per blog */}}
+{{ $scan := 40 }}      {{/* entries read per feed before picking the newest */}}
+{{ $maxItems := 1000 }} {{/* entries published in total */}}
+{{ $packSize := 20 }}  {{/* entries revealed per "Load more" */}}
+
+{{ $items := slice }}
+
+{{ range .Site.Data.feeds.feeds }}
+  {{ $feed := . }}
+  {{ $res := "" }}
+  {{ with try (resources.GetRemote $feed.url (dict "headers" (dict "User-Agent" "Mozilla/5.0 (compatible; sadensmol.com feed reader)" "Accept" "application/rss+xml, application/atom+xml, application/xml, text/xml, */*"))) }}
+    {{ with .Err }}
+      {{ warnf "interesting-blogs: cannot fetch %s: %s" $feed.url . }}
+    {{ else }}
+      {{ $res = .Value }}
+    {{ end }}
+  {{ end }}
+
+  {{ with $res }}
+    {{ $parsed := "" }}
+    {{ with try (transform.Unmarshal .Content) }}
+      {{ with .Err }}
+        {{ warnf "interesting-blogs: cannot parse %s: %s" $feed.url . }}
+      {{ else }}
+        {{ $parsed = .Value }}
+      {{ end }}
+    {{ end }}
+
+    {{ with $parsed }}
+      {{/* RSS 2.0 keeps entries under channel/item, Atom keeps them at feed/entry. */}}
+      {{ $entries := slice }}
+      {{ with .channel }}
+        {{ with .item }}{{ $entries = (cond (reflect.IsSlice .) . (slice .)) }}{{ end }}
+      {{ end }}
+      {{ if not $entries }}
+        {{ with .item }}{{ $entries = (cond (reflect.IsSlice .) . (slice .)) }}{{ end }}
+      {{ end }}
+      {{ if not $entries }}
+        {{ with .entry }}{{ $entries = (cond (reflect.IsSlice .) . (slice .)) }}{{ end }}
+      {{ end }}
+
+      {{ $found := slice }}
+      {{ range first $scan $entries }}
+        {{ $title := partial "feed-text.html" .title }}
+        {{ $link := partial "feed-link.html" .link }}
+
+        {{ $raw := "" }}
+        {{ with .pubDate }}{{ $raw = partial "feed-text.html" . }}{{ end }}
+        {{ if not $raw }}{{ with .published }}{{ $raw = partial "feed-text.html" . }}{{ end }}{{ end }}
+        {{ if not $raw }}{{ with .updated }}{{ $raw = partial "feed-text.html" . }}{{ end }}{{ end }}
+        {{ if not $raw }}{{ with .date }}{{ $raw = partial "feed-text.html" . }}{{ end }}{{ end }}
+        {{ $date := partial "feed-date.html" $raw }}
+
+        {{ if and $title $link $date }}
+          {{ $found = $found | append (dict "title" $title "link" $link "date" $date "source" $feed.name "site" (default $link $feed.site)) }}
+        {{ end }}
+      {{ end }}
+
+      {{ if $found }}
+        {{ $items = $items | append (first $perFeed (sort $found "date" "desc")) }}
+      {{ else }}
+        {{ warnf "interesting-blogs: no usable entries in %s" $feed.url }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
 {{ end }}
-<section class="interesting-blogs" id="interesting-blogs" data-feeds='{{ $feedsJSON | jsonify }}'>
+
+{{ $items = first $maxItems (sort $items "date" "desc") }}
+
+{{/* First pack: newest entries, at most one per blog. Mirrors buildPages() in
+     assets/js/feeds.js, which packs the rest of the list the same way. */}}
+{{ $firstPack := slice }}
+{{ $used := slice }}
+{{ range $items }}
+  {{ if and (lt (len $firstPack) $packSize) (not (in $used .source)) }}
+    {{ $used = $used | append .source }}
+    {{ $firstPack = $firstPack | append . }}
+  {{ end }}
+{{ end }}
+
+{{ $feedData := resources.FromString "interesting-blogs.json" ($items | jsonify) }}
+
+<section class="interesting-blogs" id="interesting-blogs"
+         data-src="{{ $feedData.RelPermalink }}"
+         data-pack-size="{{ $packSize }}">
   <h2>Interesting Blogs</h2>
   <ul>
-    <li class="feeds-loading">Loading recent posts...</li>
+    {{- range $firstPack }}
+    <li>
+      <time datetime="{{ .date }}">{{ (time.AsTime .date).Format "Jan 2, 2006" }}</time>
+      <span class="feed-entry">
+        <a href="{{ .link }}" target="_blank" rel="noopener">{{ .title }}</a>
+        <span class="feed-source"> &mdash; <a href="{{ .site }}" target="_blank" rel="noopener">{{ .source }}</a></span>
+      </span>
+    </li>
+    {{- end }}
   </ul>
-  <button type="button" class="feeds-more" hidden>Load more</button>
+  {{ if gt (len $items) (len $firstPack) }}
+  <button type="button" class="feeds-more">Load more</button>
+  {{ end }}
 </section>
-{{ end }}

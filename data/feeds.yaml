@@ -1,11 +1,18 @@
 # Interesting Blogs & RSS Feeds
 #
-# Add feeds below. Each entry needs:
+# Feeds are fetched at BUILD time by layouts/partials/interesting-blogs.html.
+# Each entry needs:
 #   - name:  Display name for the source
 #   - url:   RSS/Atom feed URL
 #   - site:  (optional) Link to the blog's homepage
 
 feeds:
+  # Anthropic (https://www.anthropic.com/rss.xml) and Every / Chain of Thought
+  # (https://every.to/chain-of-thought/feed.xml) were dropped: both URLs now
+  # return an HTML page instead of a feed.
+
+  # ===== Original set =====
+
   - name: Applied Go
     url: https://appliedgo.net/index.xml
     site: https://appliedgo.net
@@ -38,9 +45,6 @@ feeds:
     url: https://p.umputun.com/en/index.xml
     site: https://p.umputun.com
 
-  - name: Anthropic
-    url: https://www.anthropic.com/rss.xml
-    site: https://www.anthropic.com
 
   - name: OpenAI
     url: https://openai.com/blog/rss.xml
@@ -66,9 +70,6 @@ feeds:
     url: https://overreacted.io/rss.xml
     site: https://overreacted.io
 
-  - name: Chain of Thought
-    url: https://every.to/chain-of-thought/feed.xml
-    site: https://every.to/chain-of-thought
 
   - name: Sequoia Capital
     url: https://www.sequoiacap.com/feed/
@@ -93,3 +94,333 @@ feeds:
   - name: Addy Osmani
     url: https://addyosmani.com/rss.xml
     site: https://addyosmani.com
+
+  # ===== Go & backend engineering =====
+
+  - name: Anton Zhiyanov
+    url: https://antonz.org/index.xml
+    site: https://antonz.org
+
+  - name: Three Dots Labs
+    url: https://threedots.tech/index.xml
+    site: https://threedots.tech
+
+  - name: Alex Edwards Go
+    url: https://www.alexedwards.net/static/feed.rss
+    site: https://www.alexedwards.net/blog
+
+  - name: Bitfield Consulting
+    url: https://bitfieldconsulting.com/posts?format=rss
+    site: https://bitfieldconsulting.com
+
+  - name: Eli Bendersky
+    url: https://eli.thegreenplace.net/feeds/all.atom.xml
+    site: https://eli.thegreenplace.net
+
+  - name: Ben Hoyt
+    url: https://benhoyt.com/writings/rss.xml
+    site: https://benhoyt.com
+
+  - name: research!rsc
+    url: https://research.swtch.com/feed.atom
+    site: https://research.swtch.com
+
+  - name: Dave Cheney
+    url: https://dave.cheney.net/feed
+    site: https://dave.cheney.net
+
+  - name: Ardan Labs
+    url: https://www.ardanlabs.com/blog/index.xml
+    site: https://www.ardanlabs.com/blog
+
+  - name: Go Beyond
+    url: https://boldlygo.tech/index.xml
+    site: https://boldlygo.tech
+
+  - name: JetBrains Go
+    url: https://blog.jetbrains.com/go/feed/
+    site: https://blog.jetbrains.com/go/
+
+  # ===== Distributed systems, databases & performance =====
+
+  - name: Marc Brooker
+    url: https://brooker.co.za/blog/rss.xml
+    site: https://brooker.co.za/blog
+
+  - name: Murat Demirbas
+    url: https://muratbuffalo.blogspot.com/feeds/posts/default
+    site: https://muratbuffalo.blogspot.com
+
+  - name: Aphyr
+    url: https://aphyr.com/posts.atom
+    site: https://aphyr.com
+
+  - name: Brendan Gregg
+    url: https://www.brendangregg.com/blog/rss.xml
+    site: https://www.brendangregg.com/blog
+
+  - name: Jane Street
+    url: https://blog.janestreet.com/feed.xml
+    site: https://blog.janestreet.com
+
+  - name: Oxide Computer
+    url: https://oxide.computer/blog/feed
+    site: https://oxide.computer/blog
+
+  - name: ClickHouse
+    url: https://clickhouse.com/rss.xml
+    site: https://clickhouse.com/blog
+
+  - name: Neon
+    url: https://neon.com/blog/rss.xml
+    site: https://neon.com/blog
+
+  - name: PlanetScale
+    url: https://planetscale.com/blog/rss.xml
+    site: https://planetscale.com/blog
+
+  - name: Supabase
+    url: https://supabase.com/rss.xml
+    site: https://supabase.com/blog
+
+  - name: Planet PostgreSQL
+    url: https://planet.postgresql.org/rss20.xml
+    site: https://planet.postgresql.org
+
+  - name: Redis
+    url: https://redis.io/blog/feed/
+    site: https://redis.io/blog/
+
+  - name: Kubernetes Blog
+    url: https://kubernetes.io/feed.xml
+    site: https://kubernetes.io/blog/
+
+  - name: ACM Queue
+    url: https://queue.acm.org/rss/feeds/queuecontent.xml
+    site: https://queue.acm.org
+
+  - name: InfoQ Architecture
+    url: https://feed.infoq.com/architecture-design/
+    site: https://www.infoq.com/architecture-design/
+
+  - name: Nelson Elhage
+    url: https://blog.nelhage.com/atom.xml
+    site: https://blog.nelhage.com
+
+  # ===== Company / product engineering blogs =====
+
+  - name: Cloudflare
+    url: https://blog.cloudflare.com/rss/
+    site: https://blog.cloudflare.com
+
+  - name: Netflix Tech
+    url: https://netflixtechblog.com/feed
+    site: https://netflixtechblog.com
+
+  - name: Stripe
+    url: https://stripe.com/blog/feed.rss
+    site: https://stripe.com/blog
+
+  - name: GitHub Engineering
+    url: https://github.blog/engineering/feed/
+    site: https://github.blog/engineering
+
+  - name: Meta Engineering
+    url: https://engineering.fb.com/feed/
+    site: https://engineering.fb.com
+
+  - name: Dropbox Tech
+    url: https://dropbox.tech/feed
+    site: https://dropbox.tech
+
+  - name: Slack Engineering
+    url: https://slack.engineering/feed/
+    site: https://slack.engineering
+
+  - name: Spotify Engineering
+    url: https://engineering.atspotify.com/feed
+    site: https://engineering.atspotify.com
+
+  - name: Airbnb Engineering
+    url: https://medium.com/feed/airbnb-engineering
+    site: https://medium.com/airbnb-engineering
+
+  - name: Discord Engineering
+    url: https://discord.com/blog/rss.xml
+    site: https://discord.com/blog
+
+  - name: Figma Engineering
+    url: https://www.figma.com/blog/feed/atom.xml
+    site: https://www.figma.com/blog/
+
+  - name: Etsy Engineering
+    url: https://www.etsy.com/codeascraft/rss
+    site: https://www.etsy.com/codeascraft
+
+  - name: Gitlab Engineering
+    url: https://about.gitlab.com/atom.xml
+    site: https://about.gitlab.com/blog/
+
+  - name: Google Research
+    url: https://research.google/blog/rss/
+    site: https://research.google/blog/
+
+  - name: Google Testing Blog
+    url: https://testing.googleblog.com/feeds/posts/default
+    site: https://testing.googleblog.com
+
+  # ===== Infra, devtools & observability vendors =====
+
+  - name: Tailscale
+    url: https://tailscale.com/blog/index.xml
+    site: https://tailscale.com/blog
+
+  - name: Fly.io
+    url: https://fly.io/blog/feed.xml
+    site: https://fly.io/blog
+
+  - name: Vercel
+    url: https://vercel.com/atom
+    site: https://vercel.com
+
+  - name: Sentry
+    url: https://blog.sentry.io/feed.xml
+    site: https://blog.sentry.io
+
+  - name: Grafana
+    url: https://grafana.com/blog/index.xml
+    site: https://grafana.com/blog/
+
+  - name: Honeycomb
+    url: https://www.honeycomb.io/feed
+    site: https://www.honeycomb.io
+
+  - name: Datadog
+    url: https://www.datadoghq.com/blog/index.xml
+    site: https://www.datadoghq.com/blog/
+
+  - name: HashiCorp
+    url: https://www.hashicorp.com/blog/feed.xml
+    site: https://www.hashicorp.com/blog
+
+  - name: Docker
+    url: https://www.docker.com/blog/feed/
+    site: https://www.docker.com/blog/
+
+  - name: Zed
+    url: https://zed.dev/blog.rss
+    site: https://zed.dev/blog
+
+  - name: Val Town
+    url: https://blog.val.town/rss.xml
+    site: https://blog.val.town
+
+  - name: Deno
+    url: https://deno.com/feed
+    site: https://deno.com/blog
+
+  - name: Bun
+    url: https://bun.sh/rss.xml
+    site: https://bun.sh/blog
+
+  - name: Rust Blog
+    url: https://blog.rust-lang.org/feed.xml
+    site: https://blog.rust-lang.org
+
+  # ===== AI / ML =====
+
+  - name: Hugging Face
+    url: https://huggingface.co/blog/feed.xml
+    site: https://huggingface.co/blog
+
+  - name: Lilian Weng
+    url: https://lilianweng.github.io/index.xml
+    site: https://lilianweng.github.io
+
+  - name: Sebastian Raschka
+    url: https://magazine.sebastianraschka.com/feed
+    site: https://magazine.sebastianraschka.com
+
+  - name: Latent Space
+    url: https://www.latent.space/feed
+    site: https://www.latent.space
+
+  - name: Interconnects
+    url: https://www.interconnects.ai/feed
+    site: https://www.interconnects.ai
+
+  - name: Eugene Yan
+    url: https://eugeneyan.com/rss/
+    site: https://eugeneyan.com
+
+  # ===== Software practice & industry commentary =====
+
+  - name: Pragmatic Engineer
+    url: https://blog.pragmaticengineer.com/rss/
+    site: https://blog.pragmaticengineer.com
+
+  - name: Martin Fowler
+    url: https://martinfowler.com/feed.atom
+    site: https://martinfowler.com
+
+  - name: Dan Luu
+    url: https://danluu.com/atom.xml
+    site: https://danluu.com
+
+  - name: Julia Evans
+    url: https://jvns.ca/atom.xml
+    site: https://jvns.ca
+
+  - name: Thorsten Ball
+    url: https://registerspill.thorstenball.com/feed
+    site: https://registerspill.thorstenball.com
+
+  - name: Mitchell Hashimoto
+    url: https://mitchellh.com/feed.xml
+    site: https://mitchellh.com
+
+  - name: tonsky
+    url: https://tonsky.me/atom.xml
+    site: https://tonsky.me
+
+  - name: Xe Iaso
+    url: https://xeiaso.net/blog.rss
+    site: https://xeiaso.net/blog
+
+  - name: Hillel Wayne
+    url: https://www.hillelwayne.com/index.xml
+    site: https://www.hillelwayne.com
+
+  - name: Charity Majors
+    url: https://charity.wtf/feed/
+    site: https://charity.wtf
+
+  - name: Drew DeVault
+    url: https://drewdevault.com/blog/index.xml
+    site: https://drewdevault.com/blog
+
+  - name: antirez
+    url: https://antirez.com/rss
+    site: https://antirez.com
+
+  - name: Chris Siebenmann
+    url: https://utcc.utoronto.ca/~cks/space/blog/?atom
+    site: https://utcc.utoronto.ca/~cks/space/blog/
+
+  - name: ByteByteGo
+    url: https://blog.bytebytego.com/feed
+    site: https://blog.bytebytego.com
+
+  # ===== Security =====
+
+  - name: Bruce Schneier
+    url: https://www.schneier.com/feed/atom/
+    site: https://www.schneier.com
+
+  - name: Troy Hunt
+    url: https://feeds.feedburner.com/TroyHunt
+    site: https://www.troyhunt.com
+
+  - name: Signal Blog
+    url: https://signal.org/blog/rss.xml
+    site: https://signal.org/blog/

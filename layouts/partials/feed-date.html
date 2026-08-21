@@ -1,0 +1,27 @@
+{{/* Feeds date their entries in whatever format their generator felt like:
+     RFC 3339, RFC 1123, RFC 1123 without a timezone, or without a weekday.
+     time.AsTime rejects the odd ones, so pull the date out with a regexp
+     instead. Returns "YYYY-MM-DD", or "" when no plausible date is found. */}}
+{{ $s := printf "%v" . }}
+{{ $out := "" }}
+
+{{/* ISO-ish: 2026-08-21T09:00:00Z, 2026-08-21 09:00:00, 2026-08-21 */}}
+{{ with index (findRESubmatch `([0-9]{4})-([0-9]{2})-([0-9]{2})` $s 1) 0 }}
+  {{ $out = printf "%s-%s-%s" (index . 1) (index . 2) (index . 3) }}
+{{ end }}
+
+{{/* RFC 822/1123-ish: Thu, 21 Aug 2026 09:00:00 +0000 (timezone optional) */}}
+{{ if not $out }}
+  {{ $months := dict "Jan" "01" "Feb" "02" "Mar" "03" "Apr" "04" "May" "05" "Jun" "06" "Jul" "07" "Aug" "08" "Sep" "09" "Oct" "10" "Nov" "11" "Dec" "12" }}
+  {{ with index (findRESubmatch `([0-9]{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* ([0-9]{4})` $s 1) 0 }}
+    {{ $out = printf "%s-%s-%02s" (index . 3) (index $months (index . 2)) (index . 1) }}
+  {{ end }}
+{{ end }}
+
+{{/* Placeholder dates (Hugo emits year 0001 for undated pages) are not dates. */}}
+{{ if $out }}
+  {{ $year := int (substr $out 0 4) }}
+  {{ if or (lt $year 2000) (gt $year 2100) }}{{ $out = "" }}{{ end }}
+{{ end }}
+
+{{ return $out }}

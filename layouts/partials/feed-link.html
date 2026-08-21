@@ -1,0 +1,22 @@
+{{/* RSS links are text; Atom links are <link href="..." rel="alternate"/>, and a
+     feed may carry several. Prefer rel="alternate", else the first href. */}}
+{{ $v := . }}
+{{ $out := "" }}
+{{ if reflect.IsSlice $v }}
+  {{ range $v }}
+    {{ if $out }}
+    {{ else if reflect.IsMap . }}
+      {{ if eq "alternate" (default "alternate" (index . "-rel")) }}{{ $out = index . "-href" }}{{ end }}
+    {{ else }}
+      {{ $out = . }}
+    {{ end }}
+  {{ end }}
+{{ else if reflect.IsMap $v }}
+  {{ $out = index $v "-href" }}
+  {{ if not $out }}{{ $out = index $v "#text" }}{{ end }}
+{{ else }}
+  {{ $out = $v }}
+{{ end }}
+{{ $s := "" }}
+{{ with $out }}{{ $s = trim (printf "%v" .) " \n\t\r" }}{{ end }}
+{{ return $s }}

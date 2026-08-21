@@ -326,6 +326,11 @@ footer p {
   color: var(--bg);
 }
 
+.feeds-more:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* --- Blog Listing --- */
 .posts-year h2 {
   margin-top: 2rem;
