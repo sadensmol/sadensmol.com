@@ -353,6 +353,10 @@ feeds:
     url: https://eugeneyan.com/rss/
     site: https://eugeneyan.com
 
+  - name: ElevenLabs
+    url: https://elevenlabs.io/blog/rss.xml
+    site: https://elevenlabs.io/blog
+
   # ===== Software practice & industry commentary =====
 
   - name: Pragmatic Engineer
