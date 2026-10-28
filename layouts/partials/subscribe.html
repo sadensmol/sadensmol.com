@@ -1,0 +1,23 @@
+{{- /* Email subscribe form: a compact toggle button, an icon-only nav toggle with (dict "icon" true),
+       or the full inline card with (dict "full" true). */ -}}
+{{- with (site.Params.buttondown).username }}
+{{- if $.full }}
+<section class="subscribe-card">
+  <div class="subscribe-card-text">
+    <p class="subscribe-card-title">Enjoyed this post?</p>
+    <p class="subscribe-card-sub">Get new posts by email. One short email per post, unsubscribe anytime.</p>
+  </div>
+  {{ partial "subscribe-form.html" . }}
+</section>
+{{- else }}
+<details class="subscribe{{ if $.icon }} subscribe-nav{{ end }}">
+  <summary class="{{ if $.icon }}nav-icon{{ else }}subscribe-toggle{{ end }}" title="Get new posts by email" aria-label="Subscribe by email">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+    {{- if not $.icon }}
+    Subscribe
+    {{- end }}
+  </summary>
+  {{ partial "subscribe-form.html" . }}
+</details>
+{{- end }}
+{{- end }}

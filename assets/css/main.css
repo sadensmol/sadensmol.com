@@ -213,6 +213,41 @@ header ul a.active {
   color: var(--accent);
 }
 
+.nav-blog {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+  transition: color 0.2s;
+}
+
+.nav-icon::-webkit-details-marker {
+  display: none;
+}
+
+.nav-icon:hover,
+.subscribe[open] .nav-icon {
+  color: var(--accent);
+}
+
+/* Block SVG + zero line-height: the icon box is exactly the SVG, even where <summary> ignores flex (Safari). */
+.nav-icon {
+  line-height: 0;
+}
+
+.nav-icon svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
 /* --- Footer --- */
 footer {
   border-top: 1px solid var(--border);
@@ -359,6 +394,167 @@ footer p {
   font-size: 0.85rem;
   color: var(--text-muted);
   min-width: 3.5rem;
+}
+
+/* --- Subscribe --- */
+/* The popover hangs from the header's left edge so it stays on screen at any width. */
+.list-header {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 2.7rem 0 0.9rem; /* same spacing as a plain h1 (1.5em / 0.5em of 1.8rem) */
+}
+
+.list-header h1 {
+  margin: 0 0.5rem 0 0;
+}
+
+.list-header .subscribe {
+  position: static;
+}
+
+.list-header .subscribe .subscribe-form {
+  left: 0;
+  right: auto;
+}
+
+a.subscribe-toggle:hover {
+  text-decoration: none;
+}
+
+.subscribe {
+  position: relative;
+}
+
+.subscribe-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.35em 0.75em;
+  font-size: 0.8rem;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.subscribe-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.subscribe-toggle:hover,
+.subscribe[open] .subscribe-toggle {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.subscribe-form {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.subscribe .subscribe-form {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  z-index: 10;
+  width: min(20rem, calc(100vw - 2rem));
+  padding: 0.4rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* The nav popover hangs from the header's right edge so it stays on screen when the nav wraps. */
+header nav {
+  position: relative;
+}
+
+.subscribe-nav {
+  position: static;
+}
+
+.subscribe-nav .subscribe-form {
+  right: 1.5rem;
+}
+
+.subscribe-form input[type="email"] {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35em 0.6em;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.subscribe-form button {
+  padding: 0.35em 0.75em;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.subscribe-form button:hover {
+  background: var(--accent-hover);
+}
+
+.subscribe-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.subscribe-done {
+  margin: 0;
+  padding: 0.35em 0.2em;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.subscribe-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  margin-top: 3rem;
+  padding: 1rem 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.subscribe-card-text {
+  flex: 1 1 16rem;
+}
+
+.subscribe-card-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.subscribe-card-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.subscribe-card .subscribe-form {
+  flex: 1 1 18rem;
+  max-width: 22rem;
 }
 
 /* --- Blog Post --- */

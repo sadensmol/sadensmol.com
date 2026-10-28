@@ -21,6 +21,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      new_posts: ${{ steps.new_posts.outputs.list }}
     env:
       HUGO_VERSION: "0.164.0"
     steps:
@@ -37,13 +39,37 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
+      # The live post list is what subscribers were already emailed about.
+      - name: Fetch live post list
+        id: live
+        env:
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          code=$(curl -sS -o "${{ runner.temp }}/live-posts.json" -w '%{http_code}' \
+            "${BASE_URL}/posts/index.json?run=${GITHUB_RUN_ID}" || true)
+          echo "code=${code}" >> "$GITHUB_OUTPUT"
+
       - name: Build with Hugo
         env:
           HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
           HUGO_ENVIRONMENT: production
+          HUGO_PARAMS_BUTTONDOWN_USERNAME: ${{ vars.BUTTONDOWN_USERNAME }}
           TZ: America/New_York
           BASE_URL: ${{ steps.pages.outputs.base_url }}
         run: hugo --gc --minify --baseURL "${BASE_URL}/"
+
+      - name: Find new posts
+        id: new_posts
+        run: |
+          if [ "${{ steps.live.outputs.code }}" != "200" ]; then
+            echo "::warning::Live post list unavailable (HTTP ${{ steps.live.outputs.code }}), no subscriber emails this run"
+            echo "list=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          list=$(jq -c --slurpfile live "${{ runner.temp }}/live-posts.json" \
+            '[$live[0].items[].url] as $known | [.items[] | select(.url | IN($known[]) | not)]' \
+            public/posts/index.json)
+          echo "list=${list}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
@@ -60,3 +86,17 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  notify:
+    needs: [build, deploy]
+    if: needs.build.outputs.new_posts != '[]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Email subscribers about new posts
+        env:
+          BUTTONDOWN_API_KEY: ${{ secrets.BUTTONDOWN_API_KEY }}
+          NEW_POSTS: ${{ needs.build.outputs.new_posts }}
+        run: bash .github/scripts/notify-subscribers.sh

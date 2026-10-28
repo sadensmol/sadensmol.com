@@ -1,0 +1,6 @@
+{{- /* Published post list; the deploy workflow diffs it against the live site to find posts to email. */ -}}
+{{- $items := slice -}}
+{{- range .RegularPages -}}
+  {{- $items = $items | append (dict "title" .Title "url" .Permalink "description" .Description) -}}
+{{- end -}}
+{{- dict "items" $items | jsonify -}}

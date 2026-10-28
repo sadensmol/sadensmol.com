@@ -1,5 +1,9 @@
 .PHONY: up add-post
 
+# Local-only settings (gitignored); CI sets the same values from GitHub.
+-include .env
+export
+
 up:
 	hugo server -D --navigateToChanged
 

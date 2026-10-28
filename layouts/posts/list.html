@@ -1,5 +1,12 @@
 {{ define "main" }}
-<h1>{{ .Title }}</h1>
+<div class="list-header">
+  <h1>{{ .Title }}</h1>
+  <a class="subscribe-toggle" href="{{ "posts/index.xml" | absURL }}" title="RSS feed">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+    RSS
+  </a>
+  {{ partial "subscribe.html" (dict) }}
+</div>
 {{ .Content }}
 
 {{ range .Pages.GroupByDate "2006" "desc" }}

@@ -3,7 +3,15 @@
     <a href="/" class="site-title">{{ .Site.Title }}</a>
     <ul>
       {{- range .Site.Menus.main }}
+      {{- if eq .URL "/posts/" }}
+      <li class="nav-blog">
+        <a href="{{ .URL }}"{{ if $.IsMenuCurrent "main" . }} class="active"{{ end }}>{{ .Name }}</a>
+        <a class="nav-icon" href="{{ "posts/index.xml" | absURL }}" title="RSS feed" aria-label="RSS feed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg></a>
+        {{ partial "subscribe.html" (dict "icon" true) }}
+      </li>
+      {{- else }}
       <li><a href="{{ .URL }}"{{ if $.IsMenuCurrent "main" . }} class="active"{{ end }}>{{ .Name }}</a></li>
+      {{- end }}
       {{- end }}
       <li>
         <button class="theme-toggle" aria-label="Toggle theme">

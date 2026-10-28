@@ -23,6 +23,8 @@
   <div class="post-content">
     {{ .Content }}
   </div>
+
+  {{ partial "subscribe.html" (dict "full" true) }}
 </article>
 <script>
 (function() {
