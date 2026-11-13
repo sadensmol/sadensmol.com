@@ -104,12 +104,66 @@ Implementation runs at high effort. Runners that only read and report use a chea
 The model follows the stage, so you never pay planning prices for grunt work.
 
 **Pair programming between agents.** `--pair` opens a writer and a read-only reviewer of a
-*different* agent kind — for example Claude writes and Codex reviews. Hard decisions are
-agreed by both before a line is typed.
+*different* agent kind — Claude Code writes, OpenCode reviews, or the other way round. Hard
+decisions are agreed by both before a line is typed.
 
 **Every decision is on the record.** The agent logs each choice it made alone, and each
 question and answer. You audit them later with `reviewd` and `reviewq`, instead of
 babysitting the session.
+
+## The cockpit: an agterm-based flow
+
+Ten agents in ten terminal tabs is chaos. The whole flow runs inside
+[agterm](https://agterm.com), a macOS terminal built for agentic work, and the skills
+drive it through its control CLI, `agtermctl`. The agents build their own layout.
+
+| agterm | What the task flow does with it |
+|---|---|
+| **Workspace** | One per company or project. The workspace name tells `/task` which project plugin to load — no config, no flags. |
+| **Session** | One per task, named after the ticket, tinted in the project color and flagged, so the flagged view lists every live task. |
+| **Split** | Pair mode: the writer agent on the left, the reviewer agent on the right. |
+| **Companions** | Test runs, infra, consoles and review sessions hang under their task session and fold away. |
+| **Page companions** | Status reports, diffs and explainers open as local HTML pages next to the task — never a file path to open by hand. |
+| **HUD** | A small spinner over the session while the agent collects status or waits. |
+| **Agent status** | Each session row shows active, blocked or completed, so you see at once which of many agents needs you. |
+
+**Your focus is sacred.** Every session the flow opens starts in the background. An agent
+never switches your view; it only marks the row that needs you. You work on one task
+while five others run, and you jump in only at a checkpoint.
+
+## Retro: the system sleeps on it
+
+The brain does not learn during the day. It learns at night: sleep replays the day, keeps
+what matters and drops the noise. `/retro` does the same for the agents, once a week.
+
+<div class="skills-gates skills-gates-4">
+  <div>
+    <b>1 · Replay</b>
+    <p>Load every Claude Code and OpenCode session of the week. Strip secrets and personal data first.</p>
+  </div>
+  <div>
+    <b>2 · Dream</b>
+    <p>11 reviewers read the week in parallel, each through one lens, and cite the session and turn for every finding.</p>
+  </div>
+  <div>
+    <b>3 · Consolidate</b>
+    <p>Merge duplicates into incidents. Keep only those backed by a transcript quote.</p>
+  </div>
+  <div>
+    <b>4 · Remember</b>
+    <p>Write the smallest fix into the skill, hook or config that owns it. Unclear ones go to me first.</p>
+  </div>
+</div>
+
+The 11 lenses: requirements · rework · tool use · scope · technical quality · testing ·
+communication · user experience · safety and privacy · prevention · productivity.
+
+The strongest signal is me saying "redo", "again" or "I told you". Each one becomes a rule,
+so the same correction is never needed twice. The **productivity** lens works the other way:
+it finds gates, reviewers and checks that cost effort and gave nothing, and removes them.
+So the system does not only get safer every week — it gets faster. Project plugins add
+their own retro steps, and the week ends with one table: problem, cause, what changed,
+what to do next time.
 
 ## Sub-projects: one base, many companies
 
