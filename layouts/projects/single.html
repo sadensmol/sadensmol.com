@@ -23,6 +23,19 @@
         <h2 class="project-name">{{ $name }}</h2>
         {{- with .tagline }}<p class="project-tagline">{{ . }}</p>{{ end }}
         <p class="project-desc">{{ .description }}</p>
+        {{- with .features }}
+        <ul class="project-features">
+          {{- range . }}
+          <li class="project-feature">
+            <span class="project-feature-icon" aria-hidden="true">{{ .icon }}</span>
+            <div>
+              <strong class="project-feature-title">{{ .title }}</strong>
+              <p class="project-feature-text">{{ .text }}</p>
+            </div>
+          </li>
+          {{- end }}
+        </ul>
+        {{- end }}
         {{- with .tags }}
         <div class="tags project-tags">
           {{- range . }}<span class="tag">{{ . }}</span>{{ end }}

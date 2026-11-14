@@ -818,6 +818,49 @@ blockquote {
   font-size: 0.95rem;
 }
 
+.project-features {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+
+.project-feature {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  transition: border-color 0.2s;
+}
+
+.project-feature:hover {
+  border-color: var(--accent);
+}
+
+.project-feature-icon {
+  flex: none;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.project-feature-title {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.project-feature-text {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .project-tags {
   margin-bottom: 1rem;
 }
