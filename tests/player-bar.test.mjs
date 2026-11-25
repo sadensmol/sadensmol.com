@@ -78,3 +78,33 @@ test('AC5 the player controls are inside the player bar on every page', () => {
 
   assert.deepEqual(wrong, []);
 });
+
+function openBefore(tags, name) {
+  const named = tags.filter((tag) => tag.name === name);
+  return named.filter(({ closing }) => !closing).length - named.filter(({ closing }) => closing).length;
+}
+
+test('D-f2 the player is in main on the Music page and in the header after the nav elsewhere', () => {
+  const wrong = [];
+  let music = 0;
+
+  for (const { name, html } of shellPages()) {
+    const all = parsedTags(html);
+    const players = all.filter(({ id }) => id === 'player').length;
+    const preceding = all.slice(0, all.findIndex(({ id }) => id === 'player'));
+    const place = {
+      players,
+      header: openBefore(preceding, 'header'),
+      main: openBefore(preceding, 'main'),
+      nav: openBefore(preceding, 'nav'),
+      navs: preceding.filter((tag) => tag.name === 'nav' && tag.closing).length,
+    };
+    const onMusic = name === join('music', 'index.html');
+    if (onMusic) music++;
+    const expected = { players: 1, header: onMusic ? 0 : 1, main: onMusic ? 1 : 0, nav: 0, navs: 1 };
+    if (JSON.stringify(place) !== JSON.stringify(expected)) wrong.push(`${name}: ${JSON.stringify(place)}`);
+  }
+
+  assert.equal(music, 1);
+  assert.deepEqual(wrong, []);
+});

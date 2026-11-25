@@ -5,6 +5,7 @@ import { setImmediate as nextTurn } from 'node:timers/promises';
 
 const require = createRequire(import.meta.url);
 const SCRIPT = require.resolve('../assets/js/player.js');
+const SECOND_SONG = { src: '/music/second.mp3', title: 'Second' };
 const SONG = { src: '/music/song.mp3', title: 'Song', time: 5, playing: true };
 
 let originals;
@@ -67,24 +68,25 @@ function audioElement(refusesPlay) {
   };
 }
 
-function openPage({ state = null, failing = [], bar = true, refusesPlay = false } = {}) {
+function openPage({ state = null, failing = [], bar = true, refusesPlay = false, songs = [SONG] } = {}) {
   const guarded = (operation, value) => () => {
     if (failing.includes(operation)) throw new Error(`storage refuses ${operation}`);
     return value;
   };
   const audio = audioElement(refusesPlay);
   const close = element();
-  const link = element({ textContent: SONG.title, getAttribute: () => SONG.src });
+  const title = element();
+  const links = songs.map((song) => element({ ariaCurrent: null, textContent: song.title, getAttribute: () => song.src }));
   const player = element({
     hidden: true,
-    querySelector: (selector) => ({ '.player-title': element(), audio, '.player-close': close })[selector],
+    querySelector: (selector) => ({ '.player-title': title, audio, '.player-close': close })[selector],
   });
   const window = element();
   const globals = {
     window,
     document: {
       getElementById: () => (bar ? player : null),
-      querySelectorAll: () => [link],
+      querySelectorAll: () => links,
     },
     sessionStorage: {
       getItem: guarded('getItem', state && JSON.stringify(state)),
@@ -97,7 +99,7 @@ function openPage({ state = null, failing = [], bar = true, refusesPlay = false 
   }
   delete require.cache[SCRIPT];
   require(SCRIPT);
-  return { audio, close, link, player, window };
+  return { audio, close, link: links[0], links, player, title, window };
 }
 
 function warnings() {
@@ -141,4 +143,70 @@ test('V8 a refused start is logged once', async () => {
 
   assert.equal(warnings().length, 1);
   assert.match(warnings()[0], /start/);
+});
+
+function click(link) {
+  link.handlers.click({ button: 0, preventDefault() {} });
+}
+
+function marks({ links }) {
+  return links.map((link) => link.ariaCurrent);
+}
+
+// Like a real audio element, which is paused when a song ends.
+function end(audio) {
+  audio.paused = true;
+  audio.currentTime = 100;
+  audio.onended();
+}
+
+test('D-d no row is marked without a song', () => {
+  assert.deepEqual(marks(openPage({ songs: [SONG, SECOND_SONG] })), [null, null]);
+});
+
+test('D-d a restored song marks its row', () => {
+  assert.deepEqual(marks(openPage({ state: SONG, songs: [SECOND_SONG, SONG] })), [null, 'true']);
+});
+
+test('D-d a click moves the mark to the new row', () => {
+  const page = openPage({ state: SONG, songs: [SONG, SECOND_SONG] });
+
+  click(page.links[1]);
+
+  assert.deepEqual(marks(page), [null, 'true']);
+});
+
+test('D-d the close button removes the mark', () => {
+  const page = openPage({ state: SONG, songs: [SONG, SECOND_SONG] });
+  assert.deepEqual(marks(page), ['true', null]);
+
+  page.close.handlers.click();
+
+  assert.deepEqual(marks(page), [null, null]);
+});
+
+for (const [name, current, next] of [
+  ['the next song starts at the end of a song', SONG, SECOND_SONG],
+  ['the first song starts at the end of the last song', SECOND_SONG, SONG],
+  ['the first song starts at the end of a song outside the playlist', { src: '/music/gone.mp3', title: 'Gone' }, SONG],
+]) {
+  test(`D-e ${name}`, () => {
+    const songs = [SONG, SECOND_SONG];
+    const page = openPage({ state: { ...current, time: 5, playing: true }, songs });
+
+    end(page.audio);
+
+    const { audio, title, player } = page;
+    assert.deepEqual([audio.loaded, title.textContent, audio.currentTime, audio.paused, player.hidden], [next.src, next.title, 0, false, false]);
+    assert.deepEqual(marks(page), songs.map((song) => (song === next ? 'true' : null)));
+  });
+}
+
+test('D-e a song stops at its end on a page without a playlist', () => {
+  const { audio, player } = openPage({ state: SONG, songs: [] });
+  assert.equal(audio.paused, false);
+
+  end(audio);
+
+  assert.deepEqual([audio.loaded, audio.paused, player.hidden], [SONG.src, true, false]);
 });
