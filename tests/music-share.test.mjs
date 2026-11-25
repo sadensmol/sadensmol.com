@@ -32,6 +32,7 @@ afterEach(() => {
 class FakeElement {
   listeners = [];
   attributes = new Map();
+  classes = new Set();
   children = {};
   textContent = '';
   hidden = false;
@@ -46,6 +47,14 @@ class FakeElement {
 
   hasAttribute(name) {
     return this.attributes.has(name);
+  }
+
+  setAttribute(name, value) {
+    this.attributes.set(name, value);
+  }
+
+  get classList() {
+    return { toggle: (name, on) => (on ? this.classes.add(name) : this.classes.delete(name)) };
   }
 
   removeAttribute(name) {
@@ -78,29 +87,50 @@ class FakeElement {
   }
 }
 
+// Like a real audio element: the events come after the call that causes them.
 class FakeAudio extends FakeElement {
   paused = true;
   currentTime = 0;
   refusesPlay = false;
+  loaded = false;
 
   set src(value) {
     this.attributes.set('src', value);
     this.load();
   }
 
+  fire(type) {
+    this[`on${type}`]?.();
+    for (const each of this.listeners) if (each.type === type) each.listener();
+  }
+
+  fireLater(type) {
+    queueMicrotask(() => this.fire(type));
+  }
+
   load() {
+    if (this.loaded) this.fireLater('emptied');
+    this.loaded = this.hasAttribute('src');
     this.paused = true;
     this.currentTime = 0;
   }
 
   play() {
     if (this.refusesPlay) return Promise.reject(new DOMException('refused', 'NotAllowedError'));
+    if (this.paused) this.fireLater('play');
     this.paused = false;
     return Promise.resolve();
   }
 
   pause() {
+    if (!this.paused) this.fireLater('pause');
     this.paused = true;
+  }
+
+  finish() {
+    this.paused = true;
+    this.fire('pause');
+    this.fire('ended');
   }
 }
 
@@ -111,7 +141,9 @@ function rowsOf(songs) {
     play.textContent = song.title;
     const share = new FakeElement({ href: `/music/?play=${song.id}` });
     share.textContent = 'Share';
-    row.children = { '.track-play': play, '.track-share': share };
+    const toggle = new FakeElement({ 'aria-label': `Play ${song.title}` });
+    toggle.hidden = true;
+    row.children = { '.track-toggle': toggle, '.track-play': play, '.track-share': share };
     return row;
   });
 }
@@ -159,9 +191,12 @@ function openPage({ query = '', listed = [FIRST, SECOND], saved = null, refusesP
     title,
     player,
     history,
+    rows,
+    close: player.children['.player-close'],
     shares: rows.map((row) => row.children['.track-share']),
     show(found, nextQuery = '') {
       list(found);
+      rows.splice(0, rows.length, ...found);
       window.location = new URL(`/music/${nextQuery}`, ORIGIN);
       for (const { type, listener } of window.listeners) if (type === 'page:load') listener();
       return found.map((row) => row.children['.track-share']);
@@ -385,4 +420,195 @@ test('E-f Share copies once on a Music page opened inside the site', async () =>
   await nextTurn();
 
   assert.deepEqual([written, shares[1].textContent], [[`${ORIGIN}/music/?play=second`], 'Copied!']);
+});
+
+async function openSettled(options) {
+  const page = openPage(options);
+  await nextTurn();
+  return page;
+}
+
+function toggleOf(page, index) {
+  return page.rows[index].children['.track-toggle'];
+}
+
+function drawn({ rows }) {
+  return rows.map((row) => [row.children['.track-toggle'].getAttribute('aria-label'), row.classes.has('playing')]);
+}
+
+const PLAY_FIRST = [`Play ${FIRST.title}`, false];
+const PLAY_SECOND = [`Play ${SECOND.title}`, false];
+const PAUSE_FIRST = [`Pause ${FIRST.title}`, true];
+const PAUSE_SECOND = [`Pause ${SECOND.title}`, true];
+const NONE_PLAYS = [PLAY_FIRST, PLAY_SECOND];
+const FIRST_PLAYS = [PAUSE_FIRST, PLAY_SECOND];
+const SECOND_PLAYS = [PLAY_FIRST, PAUSE_SECOND];
+const FIRST_AT_30 = { src: FIRST.href, title: FIRST.title, time: 30, paused: false, hidden: false };
+
+test('G-b the script shows the toggle of each row', async () => {
+  const page = await openSettled();
+
+  assert.deepEqual(page.rows.map((_, index) => toggleOf(page, index).hidden), [false, false]);
+  assert.deepEqual(drawn(page), NONE_PLAYS);
+});
+
+test('G-b the script shows the toggles of a Music page opened inside the site', async () => {
+  const page = await openSettled({ listed: [] });
+
+  page.show(rowsOf([FIRST, SECOND]));
+
+  assert.deepEqual(page.rows.map((_, index) => toggleOf(page, index).hidden), [false, false]);
+});
+
+test('G-c only the row of the playing song says Pause', async () => {
+  const page = await openSettled();
+
+  page.rows[1].children['.track-play'].click();
+  await nextTurn();
+
+  assert.deepEqual(drawn(page), SECOND_PLAYS);
+});
+
+test('G-d a toggle of another song starts it from the beginning', async () => {
+  const page = await openSettled({ saved: SAVED });
+
+  toggleOf(page, 1).click();
+  await nextTurn();
+
+  assert.deepEqual(song(page), SECOND_STARTED);
+  assert.deepEqual(drawn(page), SECOND_PLAYS);
+});
+
+test('G-d a toggle of the playing song pauses it at its position', async () => {
+  const page = await openSettled({ saved: SAVED });
+
+  toggleOf(page, 0).click();
+  await nextTurn();
+
+  assert.deepEqual(song(page), { ...FIRST_AT_30, paused: true });
+  assert.deepEqual(drawn(page), NONE_PLAYS);
+});
+
+test('G-d a toggle of the paused song continues at its position', async () => {
+  const page = await openSettled({ saved: { ...SAVED, playing: false } });
+
+  toggleOf(page, 0).click();
+  await nextTurn();
+
+  assert.deepEqual(song(page), FIRST_AT_30);
+  assert.deepEqual(drawn(page), FIRST_PLAYS);
+});
+
+test('G-d a refused continue is logged once and the row says Play', async () => {
+  const page = await openSettled({ saved: { ...SAVED, playing: false }, refusesPlay: true });
+
+  toggleOf(page, 0).click();
+  await nextTurn();
+
+  assert.deepEqual(drawn(page), NONE_PLAYS);
+  assert.deepEqual(song(page), { ...FIRST_AT_30, paused: true });
+  assert.equal(warnings().length, 1);
+  assert.match(warnings()[0], /start/);
+});
+
+test('G-d a toggle after the close starts its song again', async () => {
+  const page = await openSettled({ saved: SAVED });
+  page.close.click();
+  await nextTurn();
+
+  toggleOf(page, 0).click();
+  await nextTurn();
+
+  assert.deepEqual(song(page), { ...FIRST_AT_30, time: 0 });
+  assert.deepEqual(drawn(page), FIRST_PLAYS);
+});
+
+test('G-e the rows follow a pause and a start in the header player', async () => {
+  const page = await openSettled({ saved: SAVED });
+
+  page.audio.pause();
+  await nextTurn();
+  const paused = drawn(page);
+  page.audio.play();
+  await nextTurn();
+
+  assert.deepEqual([paused, drawn(page)], [NONE_PLAYS, FIRST_PLAYS]);
+});
+
+test('G-e the rows follow the close button', async () => {
+  const page = await openSettled({ saved: SAVED });
+
+  page.close.click();
+  await nextTurn();
+
+  assert.deepEqual(song(page), { ...NO_SONG, title: FIRST.title });
+  assert.deepEqual(drawn(page), NONE_PLAYS);
+});
+
+test('G-e a replaced song that does not start leaves every row at Play', async () => {
+  const page = await openSettled({ saved: SAVED });
+  page.audio.refusesPlay = true;
+
+  page.rows[1].children['.track-play'].click();
+  await nextTurn();
+
+  assert.deepEqual(drawn(page), NONE_PLAYS);
+});
+
+test('G-e the next song after the end is drawn', async () => {
+  const page = await openSettled({ saved: SAVED });
+
+  page.audio.finish();
+  await nextTurn();
+
+  assert.deepEqual(drawn(page), SECOND_PLAYS);
+});
+
+test('G-e a song that ends and has no next song shows Play', async () => {
+  const page = await openSettled({ saved: SAVED });
+  page.audio.onended = null;
+
+  page.audio.finish();
+  await nextTurn();
+
+  assert.deepEqual(drawn(page), NONE_PLAYS);
+});
+
+for (const [name, options, expected] of [
+  ['a restored playing song', { saved: SAVED }, FIRST_PLAYS],
+  ['a restored paused song', { saved: { ...SAVED, playing: false } }, NONE_PLAYS],
+  ['a shared song', { query: '?play=second' }, SECOND_PLAYS],
+  ['a song that is not in the list', { saved: { ...SAVED, src: '/music/gone.mp3' } }, NONE_PLAYS],
+]) {
+  test(`G-e the first draw shows ${name}`, async () => {
+    const page = await openSettled(options);
+
+    assert.deepEqual(drawn(page), expected);
+  });
+}
+
+test('G-e a Music page opened inside the site shows the playing song and stays in sync', async () => {
+  const page = await openSettled({ listed: [], saved: SAVED });
+
+  page.show(rowsOf([FIRST, SECOND]));
+  const opened = drawn(page);
+  page.audio.pause();
+  await nextTurn();
+
+  assert.deepEqual([opened, drawn(page)], [FIRST_PLAYS, NONE_PLAYS]);
+});
+
+test('G-e page loads add no listener to the audio element and each new toggle acts once', async () => {
+  const page = await openSettled({ saved: SAVED });
+  const before = page.audio.listeners.length;
+
+  page.show(rowsOf([FIRST, SECOND]));
+  page.show(rowsOf([FIRST, SECOND]));
+  await nextTurn();
+  toggleOf(page, 0).click();
+  await nextTurn();
+
+  assert.notEqual(before, 0);
+  assert.equal(page.audio.listeners.length, before);
+  assert.equal(song(page).paused, true);
 });

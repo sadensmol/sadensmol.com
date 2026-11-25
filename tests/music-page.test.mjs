@@ -68,6 +68,16 @@ test('D-b the playlist has a header and numbers its rows', () => {
   assert.deepEqual(rows().map((row) => row['track-number'].text), rows().map((_, index) => `Track ${index + 1}`));
 });
 
+test('G-b each row starts with a hidden toggle button, then the title link', () => {
+  const found = [...music.matchAll(/<li class="?track[" ][^>]*>\s*(<button[^>]*>)\s*<\/button>\s*<a [^>]*class="?track-play"?[^>]*>([^<]*)</g)];
+
+  assert.equal(found.length, rows().length);
+  for (const [, tag, title] of found) {
+    const { type, class: name, hidden, 'aria-label': label } = attributes(tag);
+    assert.deepEqual([type, name, hidden, label], ['button', 'track-toggle', '', `Play ${title}`]);
+  }
+});
+
 test('D-i each row holds the title, number, download link and share link in order', () => {
   for (const { parts } of rows()) {
     assert.deepEqual(parts.map((part) => part.class), ['track-play', 'track-number', 'track-download', 'track-share']);
