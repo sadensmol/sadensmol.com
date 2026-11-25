@@ -65,8 +65,16 @@ class FakeElement {
     return this.children[selector] ?? null;
   }
 
-  addEventListener(type, listener) {
-    this.listeners.push({ type, listener });
+  addEventListener(type, listener, { signal } = {}) {
+    const entry = { type, listener };
+    this.listeners.push(entry);
+    signal?.addEventListener('abort', () => {
+      this.listeners = this.listeners.filter((each) => each !== entry);
+    });
+  }
+
+  dispatch(type, event) {
+    for (const each of [...this.listeners]) if (each.type === type) each.listener(event);
   }
 
   click(how = {}) {
@@ -82,7 +90,7 @@ class FakeElement {
         prevented = true;
       },
     };
-    for (const { type, listener } of this.listeners) if (type === 'click') listener(event);
+    this.dispatch('click', event);
     return prevented;
   }
 }
@@ -101,7 +109,7 @@ class FakeAudio extends FakeElement {
 
   fire(type) {
     this[`on${type}`]?.();
-    for (const each of this.listeners) if (each.type === type) each.listener();
+    this.dispatch(type);
   }
 
   fireLater(type) {
@@ -148,7 +156,7 @@ function rowsOf(songs) {
   });
 }
 
-function openPage({ query = '', listed = [FIRST, SECOND], saved = null, refusesPlay = false, navigator = {} } = {}) {
+function openPage({ query = '', listed = [FIRST, SECOND], saved = null, refusesPlay = false, state = { kept: true }, navigator = {} } = {}) {
   const audio = new FakeAudio();
   audio.refusesPlay = refusesPlay;
   const title = new FakeElement();
@@ -159,12 +167,16 @@ function openPage({ query = '', listed = [FIRST, SECOND], saved = null, refusesP
   const window = new FakeElement();
   window.location = new URL(`/music/${query}`, ORIGIN);
   const history = {
-    state: { kept: true },
-    replaced: [],
-    replaceState(...args) {
-      this.replaced.push(args);
+    state,
+    replaceState(next, _title, url = window.location.href) {
+      this.state = next;
+      window.location = new URL(url, window.location);
     },
   };
+  const document = Object.assign(new FakeElement(), {
+    getElementById: (id) => (id === 'player' ? player : null),
+    querySelectorAll: (selector) => lists[selector] ?? [],
+  });
   const lists = {};
   function list(found) {
     lists['.track'] = found;
@@ -173,10 +185,7 @@ function openPage({ query = '', listed = [FIRST, SECOND], saved = null, refusesP
   list(rows);
   const globals = {
     window,
-    document: {
-      getElementById: (id) => (id === 'player' ? player : null),
-      querySelectorAll: (selector) => lists[selector] ?? [],
-    },
+    document,
     sessionStorage: { getItem: () => saved && JSON.stringify(saved), setItem() {}, removeItem() {} },
     navigator,
     history,
@@ -190,15 +199,23 @@ function openPage({ query = '', listed = [FIRST, SECOND], saved = null, refusesP
     audio,
     title,
     player,
+    document,
     history,
+    address: () => window.location.href,
     rows,
     close: player.children['.player-close'],
     shares: rows.map((row) => row.children['.track-share']),
-    show(found, nextQuery = '') {
+    move(path, nextState = null) {
+      window.location = new URL(path, ORIGIN);
+      history.state = nextState;
+      window.dispatch('popstate');
+    },
+    show(found, nextQuery = '', nextState = {}) {
       list(found);
       rows.splice(0, rows.length, ...found);
       window.location = new URL(`/music/${nextQuery}`, ORIGIN);
-      for (const { type, listener } of window.listeners) if (type === 'page:load') listener();
+      history.state = nextState;
+      window.dispatch('page:load');
       return found.map((row) => row.children['.track-share']);
     },
   };
@@ -346,11 +363,19 @@ for (const [name, how] of [
   });
 }
 
-test('D-k a known id starts its song and removes the query', () => {
+test('H-a a known id starts its song, keeps the address and marks the entry as played', () => {
   const page = openPage({ query: '?play=second#top' });
 
   assert.deepEqual(song(page), SECOND_STARTED);
-  assert.deepEqual(page.history.replaced, [[{ kept: true }, '', '/music/#top']]);
+  assert.equal(page.address(), `${ORIGIN}/music/?play=second#top`);
+  assert.deepEqual(page.history.state, { kept: true, played: true });
+});
+
+test('H-a a fresh entry without a state starts its song', () => {
+  const page = openPage({ query: '?play=second', state: null });
+
+  assert.deepEqual(song(page), SECOND_STARTED);
+  assert.deepEqual(page.history.state, { played: true });
 });
 
 test('D-k a known id starts from the beginning over a saved song', () => {
@@ -372,7 +397,8 @@ for (const [name, query] of [
     const page = openPage({ query });
 
     assert.deepEqual(song(page), NO_SONG);
-    assert.deepEqual(page.history.replaced, []);
+    assert.equal(page.address(), `${ORIGIN}/music/${query}`);
+    assert.deepEqual(page.history.state, { kept: true });
   });
 
   test(`D-k ${name} keeps the saved song`, () => {
@@ -388,18 +414,19 @@ test('D-k a refused start keeps the shared song visible and paused', async () =>
   await nextTurn();
 
   assert.deepEqual(song(page), { ...SECOND_STARTED, paused: true });
-  assert.equal(page.history.replaced.length, 1);
+  assert.equal(page.history.state.played, true);
   assert.equal(warnings().length, 1);
   assert.match(warnings()[0], /start/);
 });
 
-test('E-h a share link followed inside the site starts its song and removes the query', () => {
+test('E-h a share link followed inside the site starts its song and keeps the query', () => {
   const page = openPage({ listed: [], saved: SAVED });
 
   page.show(rowsOf([FIRST, SECOND]), '?play=second');
 
   assert.deepEqual(song(page), SECOND_STARTED);
-  assert.deepEqual(page.history.replaced, [[{ kept: true }, '', '/music/']]);
+  assert.equal(page.address(), `${ORIGIN}/music/?play=second`);
+  assert.deepEqual(page.history.state, { played: true });
 });
 
 test('E-h a Music page opened inside the site without an id keeps the song', () => {
@@ -408,7 +435,7 @@ test('E-h a Music page opened inside the site without an id keeps the song', () 
   page.show(rowsOf([FIRST, SECOND]));
 
   assert.deepEqual(song(page), { src: FIRST.href, title: FIRST.title, time: 30, paused: false, hidden: false });
-  assert.deepEqual(page.history.replaced, []);
+  assert.deepEqual(page.history.state, {});
 });
 
 test('E-f Share copies once on a Music page opened inside the site', async () => {
@@ -611,4 +638,217 @@ test('G-e page loads add no listener to the audio element and each new toggle ac
   assert.notEqual(before, 0);
   assert.equal(page.audio.listeners.length, before);
   assert.equal(song(page).paused, true);
+});
+
+const PLAYED = { kept: true, played: true };
+const SECOND_WAITS = { ...SECOND_STARTED, paused: true };
+
+test('H-a a reload of a played entry keeps the saved song', () => {
+  const page = openPage({ query: '?play=second', saved: SAVED, state: PLAYED });
+
+  assert.deepEqual(song(page), FIRST_AT_30);
+  assert.deepEqual(page.history.state, PLAYED);
+});
+
+test('H-a Back to a played entry keeps the running song', () => {
+  const page = openPage({ listed: [], saved: SAVED });
+
+  page.show(rowsOf([FIRST, SECOND]), '?play=second', PLAYED);
+
+  assert.deepEqual(song(page), FIRST_AT_30);
+});
+
+test('H-a a share link followed again starts its song again', () => {
+  const page = openPage({ query: '?play=second' });
+  page.audio.currentTime = 30;
+
+  page.show(rowsOf([FIRST, SECOND]), '?play=second');
+
+  assert.deepEqual(song(page), SECOND_STARTED);
+});
+
+test('H-b a hash entry of the started page counts as played', () => {
+  const page = openPage({ query: '?play=second' });
+
+  page.move('/music/?play=second#top');
+
+  assert.deepEqual(page.history.state, { played: true });
+  assert.equal(page.address(), `${ORIGIN}/music/?play=second#top`);
+});
+
+for (const [name, leave] of [
+  ['another share link', (page) => page.move('/music/?play=first')],
+  [
+    'the page after it',
+    (page) => {
+      page.show([]);
+      page.move('/music/?play=second');
+    },
+  ],
+]) {
+  test(`H-b an entry of ${name} does not count as played`, () => {
+    const page = openPage({ query: '?play=second' });
+    assert.equal(page.history.state.played, true);
+
+    leave(page);
+
+    assert.equal(page.history.state, null);
+  });
+}
+
+// A browser accepts a start that a user action causes.
+async function openRefused(options) {
+  const page = await openSettled({ query: '?play=second', refusesPlay: true, ...options });
+  page.audio.refusesPlay = false;
+  return page;
+}
+
+async function act(page, type, { key, inside = null, target } = {}) {
+  const closest = (selector) => (selector.split(', ').includes(inside) ? {} : null);
+  page.document.dispatch(type, { type, key, target: target ?? { closest } });
+  await nextTurn();
+}
+
+for (const [name, type, how] of [
+  ['click', 'click', {}],
+  ['key press', 'keydown', { key: 'a' }],
+  ['Space press', 'keydown', { key: ' ' }],
+  ['key press on the document itself', 'keydown', { key: 'a', target: {} }],
+]) {
+  test(`H-c the first ${name} starts the refused song`, async () => {
+    const page = await openRefused();
+    assert.deepEqual(song(page), SECOND_WAITS);
+
+    await act(page, type, how);
+
+    assert.deepEqual(song(page), SECOND_STARTED);
+    assert.deepEqual(drawn(page), SECOND_PLAYS);
+  });
+}
+
+for (const inside of ['#player', '.track-toggle', '.track-play', '.track-share', '.track-download', 'a[href]']) {
+  for (const type of ['click', 'keydown']) {
+    test(`H-c a ${type} inside ${inside} does not start the song but the next click does`, async () => {
+      const page = await openRefused();
+
+      await act(page, type, { key: 'Enter', inside });
+      const left = song(page);
+      await act(page, 'click');
+
+      assert.deepEqual([left, song(page)], [SECOND_WAITS, SECOND_STARTED]);
+    });
+  }
+}
+
+for (const key of ['Escape', 'Tab', 'Shift', 'Control', 'Alt', 'Meta']) {
+  test(`H-c ${key} alone does not start the song but the next click does`, async () => {
+    const page = await openRefused();
+
+    await act(page, 'keydown', { key });
+    const left = song(page);
+    await act(page, 'click');
+
+    assert.deepEqual([left, song(page)], [SECOND_WAITS, SECOND_STARTED]);
+  });
+}
+
+test('H-c the user action works only once', async () => {
+  const page = await openRefused();
+  await act(page, 'click');
+  page.audio.pause();
+  await nextTurn();
+  assert.deepEqual(song(page), SECOND_WAITS);
+
+  await act(page, 'click');
+
+  assert.deepEqual(song(page), SECOND_WAITS);
+  assert.deepEqual(page.document.listeners, []);
+});
+
+test('H-c a start that fails again is logged and not tried again', async () => {
+  const page = await openSettled({ query: '?play=second', refusesPlay: true });
+
+  await act(page, 'click');
+  await act(page, 'click');
+
+  assert.equal(warnings().length, 2);
+  assert.deepEqual(song(page), SECOND_WAITS);
+});
+
+for (const [name, end, expected] of [
+  ['the toggle starts the song', (page) => toggleOf(page, 1).click(), SECOND_WAITS],
+  ['the player starts the song', (page) => page.audio.play(), SECOND_WAITS],
+  ['another song is started', (page) => page.rows[0].children['.track-play'].click(), { ...FIRST_AT_30, time: 0, paused: true }],
+  ['the player is closed', (page) => page.close.click(), { ...NO_SONG, title: SECOND.title }],
+]) {
+  test(`H-c no action starts the song after ${name}`, async () => {
+    const page = await openRefused();
+    assert.equal(page.document.listeners.length, 2);
+
+    end(page);
+    await nextTurn();
+    page.audio.pause();
+    await nextTurn();
+    await act(page, 'click');
+
+    assert.deepEqual(song(page), expected);
+    assert.deepEqual(page.document.listeners, []);
+  });
+}
+
+test('H-c a click directly after the close does not start the song', async () => {
+  const page = await openRefused();
+
+  page.close.click();
+  await act(page, 'click');
+
+  assert.deepEqual(song(page), { ...NO_SONG, title: SECOND.title });
+  assert.deepEqual(page.document.listeners, []);
+});
+
+test('H-c a late event of the replaced song does not end the wait', async () => {
+  const page = await openRefused({ saved: { ...SAVED, playing: false } });
+
+  page.audio.fire('emptied');
+  await act(page, 'click');
+
+  assert.deepEqual(song(page), SECOND_STARTED);
+});
+
+test('H-c the wait goes on after a page swap', async () => {
+  const page = await openRefused();
+
+  page.show([]);
+  await act(page, 'click');
+
+  assert.deepEqual(song(page), SECOND_STARTED);
+});
+
+test('H-c only the newest refused link waits for an action', async () => {
+  const page = await openSettled({ query: '?play=second', refusesPlay: true });
+
+  page.show(rowsOf([FIRST, SECOND]), '?play=first');
+  await nextTurn();
+  page.audio.refusesPlay = false;
+  assert.equal(page.document.listeners.length, 2);
+  await act(page, 'click');
+
+  assert.deepEqual(song(page), { ...FIRST_AT_30, time: 0 });
+  assert.deepEqual(page.document.listeners, []);
+});
+
+test('H-c a started song waits for no action', async () => {
+  const page = await openSettled({ query: '?play=second' });
+
+  assert.deepEqual(song(page), SECOND_STARTED);
+  assert.deepEqual(page.document.listeners, []);
+});
+
+test('H-d the Music page without an id waits for no action', async () => {
+  const page = await openSettled();
+
+  await act(page, 'click');
+
+  assert.deepEqual(song(page), NO_SONG);
+  assert.deepEqual(page.document.listeners, []);
 });

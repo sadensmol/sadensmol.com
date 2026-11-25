@@ -646,6 +646,16 @@ test('E-h an address that a page:load listener changes is the shown page', async
   assert.equal(page.requests.length, 1);
 });
 
+test('H-b a hash link of a page with a kept song id stays native', () => {
+  const page = openPage({ url: '/music/?play=first', state: { played: true } });
+  page.window.scrollY = 80;
+
+  assert.equal(click('/music/?play=first#top'), false);
+
+  assert.deepEqual(page.requests, []);
+  assert.deepEqual(page.history.state, { played: true, scroll: 80 });
+});
+
 test('E-i nothing is fetched before a click', async () => {
   const page = openPage();
 
