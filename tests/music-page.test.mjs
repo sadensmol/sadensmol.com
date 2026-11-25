@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { after, before, test } from 'node:test';
 
 const ROOT = join(import.meta.dirname, '..');
+const SCRIPTS = ['feeds', 'subscribe', 'player', 'music', 'post', 'navigate'];
 const RELEASED_LINKS = {
   '/music/?play=tbilisis-mziani-sia': 'თბილისის მზიანი სია',
   '/music/?play=ded-moroz-idet': 'Дед Мороз идет!',
@@ -51,12 +52,16 @@ function scripts(html) {
   return [...html.matchAll(/<script\s[^>]*\bsrc=[^>]*>/g)].map(([tag]) => attributes(tag));
 }
 
-test('D-c the idle text is directly after the player', () => {
-  assert.match(music, /<div id="?player"?\s(?:(?!<\/div>)[\s\S])*<\/div>\s*<\/div>\s*<p class="?player-idle"?>Select a track to play(?:<\/p>|\s*<section)/);
+test('E-a the Music page has no panel, idle text or label', () => {
+  const main = music.match(/<main>[\s\S]*<\/main>/)[0];
+
+  assert.match(main, /class="?track-list/);
+  assert.doesNotMatch(main, /<audio|player-idle|player-label|id="?player["\s>]/);
+  assert.doesNotMatch(music, /Now Playing|Select a track to play/);
 });
 
-test('D-b the playlist is below the player and numbers its rows', () => {
-  const order = [/id="?player["\s>]/, /class="?playlist["\s>]/, /class="?playlist-header"?>Playlist</, /class="?track-list["\s>]/].map((part) => music.search(part));
+test('D-b the playlist has a header and numbers its rows', () => {
+  const order = [/<main>/, /class="?playlist["\s>]/, /class="?playlist-header"?>Playlist</, /class="?track-list["\s>]/].map((part) => music.search(part));
 
   assert.ok(order[0] > 0);
   assert.deepEqual(order, [...order].sort((a, b) => a - b));
@@ -94,21 +99,32 @@ test('D-h2 the released share links still name their songs', () => {
   for (const [href, title] of Object.entries(RELEASED_LINKS)) assert.equal(titles[href], title);
 });
 
-test('D-j the Music page loads the music script after the player script with a matching integrity hash', () => {
-  const loaded = scripts(music);
-  const player = loaded.findIndex(({ src }) => /\/js\/player\b/.test(src));
-  const script = loaded.findIndex(({ src }) => /\/js\/music\b/.test(src));
-
-  assert.ok(player >= 0 && script > player, 'music.js is not after player.js');
-  assert.ok('defer' in loaded[player] && 'defer' in loaded[script]);
-  const file = readFileSync(join(site, new URL(loaded[script].src, 'https://sadensmol.com').pathname));
-  assert.equal(loaded[script].integrity, `sha256-${createHash('sha256').update(file).digest('base64')}`);
-});
-
-test('D-j only the Music page loads the music script', () => {
+test('E-f every page loads the six scripts in order with matching integrity hashes', () => {
   const pages = readdirSync(site, { recursive: true })
     .filter((name) => name.endsWith('.html'))
-    .filter((name) => scripts(readFileSync(join(site, name), 'utf8')).some(({ src }) => /\/js\/music\b/.test(src)));
+    .map((name) => ({ name, html: readFileSync(join(site, name), 'utf8') }))
+    .filter(({ html }) => /<main\b/.test(html));
+  assert.ok(pages.some(({ name }) => name === join('music', 'index.html')));
 
-  assert.deepEqual(pages, ['music/index.html']);
+  for (const { name, html } of pages) {
+    const loaded = scripts(html);
+    assert.deepEqual(loaded.map(({ src }) => src.match(/\/js\/([a-z]+)\./)[1]), SCRIPTS, name);
+    for (const { src, integrity, defer } of loaded) {
+      const file = readFileSync(join(site, new URL(src, 'https://sadensmol.com').pathname));
+      assert.equal(defer, '', name);
+      assert.equal(integrity, `sha256-${createHash('sha256').update(file).digest('base64')}`, name);
+    }
+  }
+});
+
+test('E-f no page depends on a script inside main', () => {
+  const found = readdirSync(site, { recursive: true })
+    .filter((name) => name.endsWith('.html'))
+    .flatMap((name) => {
+      const main = readFileSync(join(site, name), 'utf8').match(/<main\b[\s\S]*<\/main>/)?.[0] ?? '';
+      return [...main.matchAll(/<script[^>]*>/g)].map(([tag]) => tag).filter((tag) => attributes(tag).type !== 'application/ld+json').map((tag) => `${name}: ${tag}`);
+    });
+
+  assert.match(readFileSync(join(site, 'about', 'index.html'), 'utf8'), /<main\b[\s\S]*application\/ld\+json[\s\S]*<\/main>/);
+  assert.deepEqual(found, []);
 });

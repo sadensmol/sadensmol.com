@@ -26,10 +26,13 @@ afterEach(() => {
 
 function element(extra = {}) {
   const handlers = {};
+  const added = [];
   return {
     handlers,
+    added,
     textContent: '',
     addEventListener: (type, handler) => {
+      added.push(type);
       handlers[type] = handler;
     },
     ...extra,
@@ -68,6 +71,10 @@ function audioElement(refusesPlay) {
   };
 }
 
+function linksOf(songs) {
+  return songs.map((song) => element({ ariaCurrent: null, textContent: song.title, getAttribute: () => song.src }));
+}
+
 function openPage({ state = null, failing = [], bar = true, refusesPlay = false, songs = [SONG] } = {}) {
   const guarded = (operation, value) => () => {
     if (failing.includes(operation)) throw new Error(`storage refuses ${operation}`);
@@ -76,7 +83,7 @@ function openPage({ state = null, failing = [], bar = true, refusesPlay = false,
   const audio = audioElement(refusesPlay);
   const close = element();
   const title = element();
-  const links = songs.map((song) => element({ ariaCurrent: null, textContent: song.title, getAttribute: () => song.src }));
+  let links = linksOf(songs);
   const player = element({
     hidden: true,
     querySelector: (selector) => ({ '.player-title': title, audio, '.player-close': close })[selector],
@@ -99,7 +106,20 @@ function openPage({ state = null, failing = [], bar = true, refusesPlay = false,
   }
   delete require.cache[SCRIPT];
   require(SCRIPT);
-  return { audio, close, link: links[0], links, player, title, window };
+  return {
+    audio,
+    close,
+    link: links[0],
+    links,
+    player,
+    title,
+    window,
+    show(next) {
+      links = next;
+      window.handlers['page:load']();
+      return { links };
+    },
+  };
 }
 
 function warnings() {
@@ -209,4 +229,78 @@ test('D-e a song stops at its end on a page without a playlist', () => {
   end(audio);
 
   assert.deepEqual([audio.loaded, audio.paused, player.hidden], [SONG.src, true, false]);
+});
+
+function playing({ audio, title, player }) {
+  return [audio.loaded, title.textContent, audio.currentTime, audio.paused, player.hidden];
+}
+
+test('E-g a page load keeps the song, its position and its state', () => {
+  const page = openPage({ state: SONG, songs: [SONG, SECOND_SONG] });
+
+  page.show([]);
+
+  assert.deepEqual(playing(page), [SONG.src, SONG.title, SONG.time, false, false]);
+  page.audio.pause();
+  page.show(linksOf([SONG]));
+  assert.deepEqual(playing(page), [SONG.src, SONG.title, SONG.time, true, false]);
+});
+
+test('E-g a page load marks the row of the current song', () => {
+  const page = openPage({ state: SONG, songs: [] });
+
+  assert.deepEqual(marks(page.show(linksOf([SECOND_SONG, SONG]))), [null, 'true']);
+});
+
+test('E-g a page load without a song marks no row', () => {
+  const page = openPage({ songs: [] });
+
+  assert.deepEqual(marks(page.show(linksOf([SONG, SECOND_SONG]))), [null, null]);
+});
+
+test('E-g a row of a page opened in place plays its song', () => {
+  const page = openPage({ songs: [] });
+  const next = page.show(linksOf([SONG, SECOND_SONG]));
+
+  click(next.links[1]);
+
+  assert.deepEqual(playing(page), [SECOND_SONG.src, SECOND_SONG.title, 0, false, false]);
+  assert.deepEqual(marks(next), [null, 'true']);
+});
+
+test('E-g rows that stay over a page load are bound once', () => {
+  const page = openPage({ songs: [SONG, SECOND_SONG] });
+
+  page.show(page.links);
+
+  assert.deepEqual(page.links.map(({ added }) => added), [['click'], ['click']]);
+});
+
+test('E-g the next song starts after the visitor left the playlist', () => {
+  const page = openPage({ state: SONG, songs: [SONG, SECOND_SONG] });
+  page.show([]);
+
+  end(page.audio);
+
+  assert.deepEqual(playing(page), [SECOND_SONG.src, SECOND_SONG.title, 0, false, false]);
+});
+
+test('E-g the last playlist that is not empty is the one that plays', () => {
+  const third = { src: '/music/third.mp3', title: 'Third' };
+  const page = openPage({ state: SONG, songs: [SONG, SECOND_SONG] });
+  page.show(linksOf([SONG, third]));
+  page.show([]);
+
+  end(page.audio);
+
+  assert.deepEqual(playing(page), [third.src, third.title, 0, false, false]);
+});
+
+test('E-g a page load in a tab that saw no playlist still lets the song stop at its end', () => {
+  const page = openPage({ state: SONG, songs: [] });
+  page.show([]);
+
+  end(page.audio);
+
+  assert.deepEqual(playing(page), [SONG.src, SONG.title, 100, true, false]);
 });

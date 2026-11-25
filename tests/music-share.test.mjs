@@ -104,14 +104,8 @@ class FakeAudio extends FakeElement {
   }
 }
 
-function openPage({ query = '', saved = null, refusesPlay = false, navigator = {} } = {}) {
-  const audio = new FakeAudio();
-  audio.refusesPlay = refusesPlay;
-  const title = new FakeElement();
-  const player = new FakeElement();
-  player.hidden = true;
-  player.children = { '.player-title': title, audio, '.player-close': new FakeElement() };
-  const rows = [FIRST, SECOND].map((song) => {
+function rowsOf(songs) {
+  return songs.map((song) => {
     const row = new FakeElement({ 'data-track-id': song.id });
     const play = new FakeElement({ href: song.href });
     play.textContent = song.title;
@@ -120,6 +114,16 @@ function openPage({ query = '', saved = null, refusesPlay = false, navigator = {
     row.children = { '.track-play': play, '.track-share': share };
     return row;
   });
+}
+
+function openPage({ query = '', listed = [FIRST, SECOND], saved = null, refusesPlay = false, navigator = {} } = {}) {
+  const audio = new FakeAudio();
+  audio.refusesPlay = refusesPlay;
+  const title = new FakeElement();
+  const player = new FakeElement();
+  player.hidden = true;
+  player.children = { '.player-title': title, audio, '.player-close': new FakeElement() };
+  const rows = rowsOf(listed);
   const window = new FakeElement();
   window.location = new URL(`/music/${query}`, ORIGIN);
   const history = {
@@ -129,7 +133,12 @@ function openPage({ query = '', saved = null, refusesPlay = false, navigator = {
       this.replaced.push(args);
     },
   };
-  const lists = { '.track': rows, '.track-play': rows.map((row) => row.children['.track-play']) };
+  const lists = {};
+  function list(found) {
+    lists['.track'] = found;
+    lists['.track-play'] = found.map((row) => row.children['.track-play']);
+  }
+  list(rows);
   const globals = {
     window,
     document: {
@@ -145,8 +154,19 @@ function openPage({ query = '', saved = null, refusesPlay = false, navigator = {
     delete require.cache[script];
     require(script);
   }
-  const shares = rows.map((row) => row.children['.track-share']);
-  return { audio, title, player, history, shares };
+  return {
+    audio,
+    title,
+    player,
+    history,
+    shares: rows.map((row) => row.children['.track-share']),
+    show(found, nextQuery = '') {
+      list(found);
+      window.location = new URL(`/music/${nextQuery}`, ORIGIN);
+      for (const { type, listener } of window.listeners) if (type === 'page:load') listener();
+      return found.map((row) => row.children['.track-share']);
+    },
+  };
 }
 
 function clipboard({ refusal = null } = {}) {
@@ -336,4 +356,33 @@ test('D-k a refused start keeps the shared song visible and paused', async () =>
   assert.equal(page.history.replaced.length, 1);
   assert.equal(warnings().length, 1);
   assert.match(warnings()[0], /start/);
+});
+
+test('E-h a share link followed inside the site starts its song and removes the query', () => {
+  const page = openPage({ listed: [], saved: SAVED });
+
+  page.show(rowsOf([FIRST, SECOND]), '?play=second');
+
+  assert.deepEqual(song(page), SECOND_STARTED);
+  assert.deepEqual(page.history.replaced, [[{ kept: true }, '', '/music/']]);
+});
+
+test('E-h a Music page opened inside the site without an id keeps the song', () => {
+  const page = openPage({ listed: [], saved: SAVED });
+
+  page.show(rowsOf([FIRST, SECOND]));
+
+  assert.deepEqual(song(page), { src: FIRST.href, title: FIRST.title, time: 30, paused: false, hidden: false });
+  assert.deepEqual(page.history.replaced, []);
+});
+
+test('E-f Share copies once on a Music page opened inside the site', async () => {
+  const { navigator, written } = clipboard();
+  const page = openPage({ navigator });
+  const shares = page.show(rowsOf([FIRST, SECOND]));
+
+  assert.equal(shares[1].click(), true);
+  await nextTurn();
+
+  assert.deepEqual([written, shares[1].textContent], [[`${ORIGIN}/music/?play=second`], 'Copied!']);
 });

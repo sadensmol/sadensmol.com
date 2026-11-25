@@ -84,11 +84,12 @@ function openBefore(tags, name) {
   return named.filter(({ closing }) => !closing).length - named.filter(({ closing }) => closing).length;
 }
 
-test('D-f2 the player is in main on the Music page and in the header after the nav elsewhere', () => {
+test('E-a every page has its one player in the header after the nav', () => {
   const wrong = [];
-  let music = 0;
+  const pages = shellPages();
+  assert.ok(pages.some(({ name }) => name === join('music', 'index.html')));
 
-  for (const { name, html } of shellPages()) {
+  for (const { name, html } of pages) {
     const all = parsedTags(html);
     const players = all.filter(({ id }) => id === 'player').length;
     const preceding = all.slice(0, all.findIndex(({ id }) => id === 'player'));
@@ -99,12 +100,9 @@ test('D-f2 the player is in main on the Music page and in the header after the n
       nav: openBefore(preceding, 'nav'),
       navs: preceding.filter((tag) => tag.name === 'nav' && tag.closing).length,
     };
-    const onMusic = name === join('music', 'index.html');
-    if (onMusic) music++;
-    const expected = { players: 1, header: onMusic ? 0 : 1, main: onMusic ? 1 : 0, nav: 0, navs: 1 };
+    const expected = { players: 1, header: 1, main: 0, nav: 0, navs: 1 };
     if (JSON.stringify(place) !== JSON.stringify(expected)) wrong.push(`${name}: ${JSON.stringify(place)}`);
   }
 
-  assert.equal(music, 1);
   assert.deepEqual(wrong, []);
 });
