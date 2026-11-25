@@ -678,6 +678,14 @@ test('H-b a hash entry of the started page counts as played', () => {
   assert.equal(page.address(), `${ORIGIN}/music/?play=second#top`);
 });
 
+test('H-b a hash entry of a played entry counts as played', () => {
+  const page = openPage({ query: '?play=second', state: PLAYED, saved: SAVED });
+
+  page.move('/music/?play=second#top');
+
+  assert.deepEqual(page.history.state, { played: true });
+});
+
 for (const [name, leave] of [
   ['another share link', (page) => page.move('/music/?play=first')],
   [
