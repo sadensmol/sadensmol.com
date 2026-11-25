@@ -5,8 +5,10 @@ description: "Songs by sadensmol that play right on the site, also while you rea
 author: "Denis Sazonov"
 image: "/images/profile.jpg"
 tracks:
-  - title: "თბილისის მზიანი სია"
+  - id: "tbilisis-mziani-sia"
+    title: "თბილისის მზიანი სია"
     src: "/music/თბილისის მზიანი სია.mp3"
-  - title: "Дед Мороз идет!"
+  - id: "ded-moroz-idet"
+    title: "Дед Мороз идет!"
     src: "/music/Дед Мороз идет!.mp3"
 ---
