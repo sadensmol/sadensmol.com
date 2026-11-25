@@ -73,13 +73,17 @@
       if (event.type === "keydown" && IGNORED_KEYS.includes(event.key)) return;
       if (event.target.closest && event.target.closest(OWN_HANDLER)) return;
 
-      var waiting = audio.paused && audio.getAttribute("src") === src;
-      endRefusedStart();
-      if (waiting) playAudio();
+      if (!audio.paused || audio.getAttribute("src") !== src) {
+        endRefusedStart();
+        return;
+      }
+
+      // The browser refuses a touchend that ends a scroll, so an attempt alone does not end the wait.
+      playAudio();
     }
 
-    ["click", "keydown"].forEach(function (type) {
-      document.addEventListener(type, startOnAction, { capture: true, signal: signal });
+    ["click", "keydown", "touchend"].forEach(function (type) {
+      document.addEventListener(type, startOnAction, { capture: true, passive: true, signal: signal });
     });
     // The events of the song before this one can arrive late, so they end nothing by themselves.
     ["play", "playing", "emptied"].forEach(function (type) {

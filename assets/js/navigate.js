@@ -173,7 +173,6 @@
       else scrollToStart();
 
       window.dispatchEvent(new Event("page:load"));
-      // A page:load listener can change the address: music.js removes ?play=.
       shownPage = currentPage();
       saveScrollLater();
     } catch (err) {
