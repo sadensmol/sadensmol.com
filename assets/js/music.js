@@ -18,8 +18,7 @@
 
   var audio = document.getElementById("player").querySelector("audio");
   var sharedPage = null;
-  // The song whose start the browser refused, until a user action starts it.
-  var refused = null;
+  var waitController = null;
 
   function share(link, title) {
     var url = new URL(link.getAttribute("href"), window.location.href).href;
@@ -58,16 +57,16 @@
   }
 
   function endRefusedStart() {
-    if (refused) refused.abort();
-    refused = null;
+    if (waitController) waitController.abort();
+    waitController = null;
   }
 
   function waitForUserAction(src) {
     endRefusedStart();
     if (!audio.paused || audio.getAttribute("src") !== src) return;
 
-    refused = new AbortController();
-    var signal = refused.signal;
+    waitController = new AbortController();
+    var signal = waitController.signal;
 
     function startOnAction(event) {
       if (event.type === "keydown" && IGNORED_KEYS.includes(event.key)) return;
