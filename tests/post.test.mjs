@@ -302,6 +302,36 @@ test('E-f a frame load without a submit changes no form', () => {
   assert.equal(only.element.innerHTML, undefined);
 });
 
+const OPEN_HEADER_POPUP = 'body > header details.subscribe[open]';
+
+test('E-f a page load closes each open subscribe popup of the header', () => {
+  const popups = [{ open: true }, { open: true }];
+  const site = load('subscribe', { [OPEN_HEADER_POPUP]: popups });
+
+  site.show(site.document.content);
+
+  assert.deepEqual(popups, [{ open: false }, { open: false }]);
+});
+
+test('E-f the first load keeps an open subscribe popup of the header', () => {
+  const popup = { open: true };
+
+  load('subscribe', { [OPEN_HEADER_POPUP]: [popup] });
+
+  assert.equal(popup.open, true);
+});
+
+test('E-f a page load keeps the note of a sent header form', () => {
+  const header = form();
+  const site = load('subscribe', { '.subscribe-form': [header.element] });
+  header.element.dispatchEvent(new Event('submit'));
+  site.body.children[0].dispatchEvent(new Event('load'));
+
+  site.show({ '.subscribe-form': [header.element], [OPEN_HEADER_POPUP]: [{ open: true }] });
+
+  assert.match(header.element.innerHTML, /Check your inbox/);
+});
+
 function feeds({ size = '2', src = '/feeds.json' } = {}) {
   const button = new FakeElement('button');
   button.removed = false;
