@@ -1,0 +1,10 @@
+{
+  "name": "sadensmol.com",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "hugo-extended": "0.164.0"
+  }
+}
