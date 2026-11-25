@@ -1,6 +1,8 @@
 (function () {
   var COPIED_MS = 2000;
 
+  var audio = document.getElementById("player").querySelector("audio");
+
   function share(link, title) {
     var url = new URL(link.getAttribute("href"), window.location.href).href;
 
@@ -19,12 +21,52 @@
     });
   }
 
+  function isCurrent(link) {
+    return link.getAttribute("href") === audio.getAttribute("src");
+  }
+
+  function drawRows() {
+    document.querySelectorAll(".track").forEach(function (row) {
+      var toggle = row.querySelector(".track-toggle");
+      if (!toggle) return;
+
+      var link = row.querySelector(".track-play");
+      var playing = isCurrent(link) && !audio.paused;
+      row.classList.toggle("playing", playing);
+      toggle.setAttribute("aria-label", `${playing ? "Pause" : "Play"} ${link.textContent}`);
+    });
+  }
+
+  function bindToggle(row) {
+    var toggle = row.querySelector(".track-toggle");
+    if (!toggle) return;
+
+    var link = row.querySelector(".track-play");
+    toggle.addEventListener("click", function () {
+      if (!isCurrent(link)) {
+        link.click();
+        return;
+      }
+
+      if (!audio.paused) {
+        audio.pause();
+        return;
+      }
+
+      audio.play().catch(function (err) {
+        console.warn("cannot start the song:", err);
+      });
+    });
+    toggle.hidden = false;
+  }
+
   function start() {
     var rows = Array.from(document.querySelectorAll(".track"));
 
     rows.forEach(function (row) {
-      var link = row.querySelector(".track-share");
+      bindToggle(row);
 
+      var link = row.querySelector(".track-share");
       link.addEventListener("click", async function (event) {
         if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
 
@@ -38,6 +80,8 @@
       });
     });
 
+    drawRows();
+
     var id = new URLSearchParams(window.location.search).get("play");
     if (!id) return;
 
@@ -50,6 +94,9 @@
     history.replaceState(history.state, "", window.location.pathname + window.location.hash);
   }
 
+  ["play", "pause", "ended", "emptied"].forEach(function (type) {
+    audio.addEventListener(type, drawRows);
+  });
   window.addEventListener("page:load", start);
   start();
 })();
