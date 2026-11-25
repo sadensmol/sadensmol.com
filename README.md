@@ -18,6 +18,9 @@ To add a song to the Music page:
 
 1. Put the mp3 file in `static/music/`.
 2. Add an entry to `tracks` in `content/music.md`, with the `title` and the `src` (`/music/<file name>.mp3`). The page lists the songs in this order.
+3. Update `tests/music.test.mjs`, then run `npm ci && npm test`:
+   - Add the song to `SONGS`, in the same order as `tracks`. Set the `title` and the `sha256` of the file (`sha256sum "static/music/<file name>.mp3"`). The tests expect `<title>.mp3` as the file name.
+   - In the `AC4 no song title or file name contains "(1)"` test, set the expected count to two times the number of songs.
 
 ## Email subscriptions
 
