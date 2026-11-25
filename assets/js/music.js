@@ -1,7 +1,25 @@
 (function () {
   var COPIED_MS = 2000;
+  var OWN_HANDLER = "#player, .track-toggle, .track-play, .track-share, .track-download, a[href]";
+  var IGNORED_KEYS = [
+    "Escape",
+    "Tab",
+    "Shift",
+    "Control",
+    "Alt",
+    "AltGraph",
+    "Meta",
+    "CapsLock",
+    "NumLock",
+    "ScrollLock",
+    "Fn",
+    "FnLock",
+  ];
 
   var audio = document.getElementById("player").querySelector("audio");
+  var sharedPage = null;
+  // The song whose start the browser refused, until a user action starts it.
+  var refused = null;
 
   function share(link, title) {
     var url = new URL(link.getAttribute("href"), window.location.href).href;
@@ -23,6 +41,56 @@
 
   function isCurrent(link) {
     return link.getAttribute("href") === audio.getAttribute("src");
+  }
+
+  function playAudio() {
+    audio.play().catch(function (err) {
+      console.warn("cannot start the song:", err);
+    });
+  }
+
+  function currentPage() {
+    return `${window.location.pathname}${window.location.search}`;
+  }
+
+  function markPlayed() {
+    history.replaceState(Object.assign({}, history.state, { played: true }), "");
+  }
+
+  function endRefusedStart() {
+    if (refused) refused.abort();
+    refused = null;
+  }
+
+  function waitForUserAction(src) {
+    endRefusedStart();
+    if (!audio.paused || audio.getAttribute("src") !== src) return;
+
+    refused = new AbortController();
+    var signal = refused.signal;
+
+    function startOnAction(event) {
+      if (event.type === "keydown" && IGNORED_KEYS.includes(event.key)) return;
+      if (event.target.closest && event.target.closest(OWN_HANDLER)) return;
+
+      var waiting = audio.paused && audio.getAttribute("src") === src;
+      endRefusedStart();
+      if (waiting) playAudio();
+    }
+
+    ["click", "keydown"].forEach(function (type) {
+      document.addEventListener(type, startOnAction, { capture: true, signal: signal });
+    });
+    // The events of the song before this one can arrive late, so they end nothing by themselves.
+    ["play", "playing", "emptied"].forEach(function (type) {
+      audio.addEventListener(
+        type,
+        function () {
+          if (!audio.paused || audio.getAttribute("src") !== src) endRefusedStart();
+        },
+        { signal: signal }
+      );
+    });
   }
 
   function drawRows() {
@@ -53,14 +121,13 @@
         return;
       }
 
-      audio.play().catch(function (err) {
-        console.warn("cannot start the song:", err);
-      });
+      playAudio();
     });
     toggle.hidden = false;
   }
 
   function start() {
+    sharedPage = null;
     var rows = Array.from(document.querySelectorAll(".track"));
 
     rows.forEach(function (row) {
@@ -90,12 +157,21 @@
     });
     if (!shared) return;
 
-    shared.querySelector(".track-play").click();
-    history.replaceState(history.state, "", window.location.pathname + window.location.hash);
+    sharedPage = currentPage();
+    if (history.state && history.state.played) return;
+
+    var link = shared.querySelector(".track-play");
+    link.click();
+    markPlayed();
+    waitForUserAction(link.getAttribute("href"));
   }
 
   ["play", "pause", "ended", "emptied"].forEach(function (type) {
     audio.addEventListener(type, drawRows);
+  });
+  // A hash link of the page makes a history entry without a state.
+  window.addEventListener("popstate", function () {
+    if (currentPage() === sharedPage) markPlayed();
   });
   window.addEventListener("page:load", start);
   start();
