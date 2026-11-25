@@ -37,6 +37,15 @@
     });
   }
 
-  window.addEventListener('page:load', bindForms);
+  function closeHeaderPopups() {
+    document.querySelectorAll('body > header details.subscribe[open]').forEach(function (popup) {
+      popup.open = false;
+    });
+  }
+
+  window.addEventListener('page:load', function () {
+    closeHeaderPopups();
+    bindForms();
+  });
   bindForms();
 })();
