@@ -3,10 +3,16 @@
   <h1>{{ .Title }}</h1>
   {{ .Content }}
 
-  <ul class="track-list">
-    {{- range .Params.tracks }}
-    <li><a class="track-play" href="{{ .src | relURL }}">{{ .title }}</a></li>
-    {{- end }}
-  </ul>
+  {{ partial "player.html" . }}
+  <p class="player-idle">Select a track to play</p>
+
+  <section class="playlist">
+    <h2 class="playlist-header">Playlist</h2>
+    <ol class="track-list">
+      {{- range $index, $track := .Params.tracks }}
+      <li class="track"><a class="track-play" href="{{ $track.src | relURL }}">{{ $track.title }}</a><span class="track-number">Track {{ add $index 1 }}</span></li>
+      {{- end }}
+    </ol>
+  </section>
 </article>
 {{ end }}

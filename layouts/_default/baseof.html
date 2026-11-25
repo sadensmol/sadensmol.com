@@ -12,7 +12,9 @@
     <a href="#top">&uarr; Scroll to top</a>
   </div>
   {{- partial "footer.html" . -}}
+  {{- if ne .Type "music" }}
   {{- partial "player.html" . -}}
+  {{- end }}
   {{ $feeds := resources.Get "js/feeds.js" | minify | fingerprint }}
   <script src="{{ $feeds.RelPermalink }}" integrity="{{ $feeds.Data.Integrity }}" defer></script>
   {{ $subscribe := resources.Get "js/subscribe.js" | minify | fingerprint }}

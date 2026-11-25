@@ -6,6 +6,7 @@
 
   var titleEl = player.querySelector(".player-title");
   var audio = player.querySelector("audio");
+  var tracks = Array.from(document.querySelectorAll(".track-play"));
 
   function readState() {
     try {
@@ -24,11 +25,18 @@
     }
   }
 
+  function markCurrent(src) {
+    tracks.forEach(function (link) {
+      link.ariaCurrent = link.getAttribute("href") === src ? "true" : null;
+    });
+  }
+
   function load(state) {
     titleEl.textContent = state.title;
     audio.src = state.src;
     audio.currentTime = state.time;
     player.hidden = false;
+    markCurrent(state.src);
     if (!state.playing) return;
 
     audio.play().catch(function (err) {
@@ -42,6 +50,11 @@
     // Removing src alone keeps the old song loaded in the controls.
     audio.load();
     player.hidden = true;
+    markCurrent(null);
+  }
+
+  function play(link) {
+    load({ src: link.getAttribute("href"), title: link.textContent, time: 0, playing: true });
   }
 
   function restore() {
@@ -50,14 +63,23 @@
     else stop();
   }
 
-  document.querySelectorAll(".track-play").forEach(function (link) {
+  tracks.forEach(function (link) {
     link.addEventListener("click", function (event) {
       if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
 
       event.preventDefault();
-      load({ src: link.getAttribute("href"), title: link.textContent, time: 0, playing: true });
+      play(link);
     });
   });
+
+  audio.onended = function () {
+    if (tracks.length === 0) return;
+
+    var current = tracks.findIndex(function (link) {
+      return link.getAttribute("href") === audio.getAttribute("src");
+    });
+    play(tracks[(current + 1) % tracks.length]);
+  };
 
   player.querySelector(".player-close").addEventListener("click", function () {
     stop();
