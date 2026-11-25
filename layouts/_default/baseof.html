@@ -12,10 +12,11 @@
     <a href="#top">&uarr; Scroll to top</a>
   </div>
   {{- partial "footer.html" . -}}
-  {{ $feeds := resources.Get "js/feeds.js" | minify | fingerprint }}
-  <script src="{{ $feeds.RelPermalink }}" integrity="{{ $feeds.Data.Integrity }}" defer></script>
-  {{ $subscribe := resources.Get "js/subscribe.js" | minify | fingerprint }}
-  <script src="{{ $subscribe.RelPermalink }}" integrity="{{ $subscribe.Data.Integrity }}" defer></script>
+  {{- range slice "feeds" "subscribe" "player" "music" "post" "navigate" }}
+  {{- with resources.Get (printf "js/%s.js" .) | minify | fingerprint }}
+  <script src="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" defer></script>
+  {{- end }}
+  {{- end }}
   <script>
   (function() {
     var el = document.querySelector('.scroll-to-top');
@@ -25,6 +26,7 @@
       }
       toggleScroll();
       window.addEventListener('resize', toggleScroll, { passive: true });
+      window.addEventListener('page:load', toggleScroll);
     }
 
     // Theme toggle

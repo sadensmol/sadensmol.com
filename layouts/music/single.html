@@ -1,0 +1,15 @@
+{{ define "main" }}
+<article>
+  <h1>{{ .Title }}</h1>
+  {{ .Content }}
+
+  <section class="playlist">
+    <h2 class="playlist-header">Playlist</h2>
+    <ol class="track-list">
+      {{- range $index, $track := .Params.tracks }}
+      <li class="track" data-track-id="{{ $track.id }}"><button type="button" class="track-toggle" hidden aria-label="Play {{ $track.title }}"></button><a class="track-play" href="{{ $track.src | relURL }}">{{ $track.title }}</a><span class="track-number">Track {{ add $index 1 }}</span><a class="track-download" href="{{ $track.src | relURL }}" download>Download</a><a class="track-share" href="{{ $.RelPermalink }}?play={{ $track.id }}">Share</a></li>
+      {{- end }}
+    </ol>
+  </section>
+</article>
+{{ end }}
