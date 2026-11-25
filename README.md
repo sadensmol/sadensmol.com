@@ -12,6 +12,13 @@ make add-post         # create a new post
 
 `.env` is gitignored and loaded by `make`.
 
+## Music
+
+To add a song to the Music page:
+
+1. Put the mp3 file in `static/music/`.
+2. Add an entry to `tracks` in `content/music.md`, with the `title` and the `src` (`/music/<file name>.mp3`). The page lists the songs in this order.
+
 ## Email subscriptions
 
 Readers subscribe through a form at the end of each post and at the top of the Blog page. Subscribers are stored in [Buttondown](https://buttondown.com).

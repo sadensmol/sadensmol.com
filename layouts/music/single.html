@@ -1,0 +1,12 @@
+{{ define "main" }}
+<article>
+  <h1>{{ .Title }}</h1>
+  {{ .Content }}
+
+  <ul class="track-list">
+    {{- range .Params.tracks }}
+    <li><a class="track-play" href="{{ .src | relURL }}">{{ .title }}</a></li>
+    {{- end }}
+  </ul>
+</article>
+{{ end }}
