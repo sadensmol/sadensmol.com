@@ -65,8 +65,8 @@ class FakeElement {
     return this.children[selector] ?? null;
   }
 
-  addEventListener(type, listener, { signal } = {}) {
-    const entry = { type, listener };
+  addEventListener(type, listener, { signal, ...options } = {}) {
+    const entry = { type, listener, options };
     this.listeners.push(entry);
     signal?.addEventListener('abort', () => {
       this.listeners = this.listeners.filter((each) => each !== entry);
@@ -100,6 +100,7 @@ class FakeAudio extends FakeElement {
   paused = true;
   currentTime = 0;
   refusesPlay = false;
+  plays = 0;
   loaded = false;
 
   set src(value) {
@@ -124,6 +125,7 @@ class FakeAudio extends FakeElement {
   }
 
   play() {
+    this.plays += 1;
     if (this.refusesPlay) return Promise.reject(new DOMException('refused', 'NotAllowedError'));
     if (this.paused) this.fireLater('play');
     this.paused = false;
@@ -713,6 +715,7 @@ for (const [name, type, how] of [
   ['click', 'click', {}],
   ['key press', 'keydown', { key: 'a' }],
   ['Space press', 'keydown', { key: ' ' }],
+  ['touch', 'touchend', {}],
   ['key press on the document itself', 'keydown', { key: 'a', target: {} }],
 ]) {
   test(`H-c the first ${name} starts the refused song`, async () => {
@@ -727,7 +730,7 @@ for (const [name, type, how] of [
 }
 
 for (const inside of ['#player', '.track-toggle', '.track-play', '.track-share', '.track-download', 'a[href]']) {
-  for (const type of ['click', 'keydown']) {
+  for (const type of ['click', 'keydown', 'touchend']) {
     test(`H-c a ${type} inside ${inside} does not start the song but the next click does`, async () => {
       const page = await openRefused();
 
@@ -765,15 +768,50 @@ test('H-c the user action works only once', async () => {
   assert.deepEqual(page.document.listeners, []);
 });
 
-test('H-c a start that fails again is logged and not tried again', async () => {
-  const page = await openSettled({ query: '?play=second', refusesPlay: true });
+test('I-a the touch listener captures and is passive', async () => {
+  const page = await openRefused();
 
-  await act(page, 'click');
-  await act(page, 'click');
+  const touch = page.document.listeners.filter(({ type }) => type === 'touchend');
 
-  assert.equal(warnings().length, 2);
-  assert.deepEqual(song(page), SECOND_WAITS);
+  assert.deepEqual(touch.map(({ options }) => options), [{ capture: true, passive: true }]);
 });
+
+for (const type of ['touchend', 'click', 'keydown']) {
+  test(`I-b a refused ${type} is logged and keeps the wait for the next action`, async () => {
+    const page = await openSettled({ query: '?play=second', refusesPlay: true });
+    const before = warnings().length;
+
+    await act(page, type, { key: 'a' });
+    await act(page, type, { key: 'a' });
+    const refused = [song(page), warnings().length - before];
+    page.audio.refusesPlay = false;
+    await act(page, type, { key: 'a' });
+
+    assert.deepEqual(refused, [SECOND_WAITS, 2]);
+    assert.deepEqual(song(page), SECOND_STARTED);
+    assert.deepEqual(page.document.listeners, []);
+  });
+}
+
+for (const [name, between] of [
+  ['before the play event', null],
+  ['after the play event', nextTurn],
+]) {
+  test(`I-b a tap whose click comes ${name} starts the song once`, async () => {
+    const page = await openRefused();
+    const before = page.audio.plays;
+    const tap = (type) => page.document.dispatch(type, { type, target: {} });
+
+    tap('touchend');
+    if (between) await between();
+    tap('click');
+    await nextTurn();
+
+    assert.equal(page.audio.plays - before, 1);
+    assert.deepEqual(song(page), SECOND_STARTED);
+    assert.deepEqual(page.document.listeners, []);
+  });
+}
 
 for (const [name, end, expected] of [
   ['the toggle starts the song', (page) => toggleOf(page, 1).click(), SECOND_WAITS],
@@ -783,13 +821,31 @@ for (const [name, end, expected] of [
 ]) {
   test(`H-c no action starts the song after ${name}`, async () => {
     const page = await openRefused();
-    assert.equal(page.document.listeners.length, 2);
+    assert.equal(page.document.listeners.length, 3);
 
     end(page);
     await nextTurn();
     page.audio.pause();
     await nextTurn();
     await act(page, 'click');
+
+    assert.deepEqual(song(page), expected);
+    assert.deepEqual(page.document.listeners, []);
+  });
+}
+
+for (const [name, end, expected] of [
+  ['the close', (page) => page.close.click(), { ...NO_SONG, title: SECOND.title }],
+  ['another song', (page) => page.rows[0].children['.track-play'].click(), { ...FIRST_AT_30, time: 0, paused: true }],
+]) {
+  test(`I-b a touch after a refused touch and ${name} does not start the song`, async () => {
+    const page = await openSettled({ query: '?play=second', refusesPlay: true });
+    await act(page, 'touchend');
+
+    end(page);
+    await nextTurn();
+    page.audio.refusesPlay = false;
+    await act(page, 'touchend');
 
     assert.deepEqual(song(page), expected);
     assert.deepEqual(page.document.listeners, []);
@@ -830,7 +886,7 @@ test('H-c only the newest refused link waits for an action', async () => {
   page.show(rowsOf([FIRST, SECOND]), '?play=first');
   await nextTurn();
   page.audio.refusesPlay = false;
-  assert.equal(page.document.listeners.length, 2);
+  assert.equal(page.document.listeners.length, 3);
   await act(page, 'click');
 
   assert.deepEqual(song(page), { ...FIRST_AT_30, time: 0 });
