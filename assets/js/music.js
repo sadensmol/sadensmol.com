@@ -1,8 +1,6 @@
 (function () {
   var COPIED_MS = 2000;
 
-  var rows = Array.from(document.querySelectorAll(".track"));
-
   function share(link, title) {
     var url = new URL(link.getAttribute("href"), window.location.href).href;
 
@@ -21,30 +19,37 @@
     });
   }
 
-  rows.forEach(function (row) {
-    var link = row.querySelector(".track-share");
+  function start() {
+    var rows = Array.from(document.querySelectorAll(".track"));
 
-    link.addEventListener("click", async function (event) {
-      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    rows.forEach(function (row) {
+      var link = row.querySelector(".track-share");
 
-      event.preventDefault();
-      try {
-        await share(link, row.querySelector(".track-play").textContent);
-      } catch (err) {
-        // navigator.clipboard is undefined on a page without HTTPS.
-        console.warn("cannot copy the link of the song:", err);
-      }
+      link.addEventListener("click", async function (event) {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+
+        event.preventDefault();
+        try {
+          await share(link, row.querySelector(".track-play").textContent);
+        } catch (err) {
+          // navigator.clipboard is undefined on a page without HTTPS.
+          console.warn("cannot copy the link of the song:", err);
+        }
+      });
     });
-  });
 
-  var id = new URLSearchParams(window.location.search).get("play");
-  if (!id) return;
+    var id = new URLSearchParams(window.location.search).get("play");
+    if (!id) return;
 
-  var shared = rows.find(function (row) {
-    return row.getAttribute("data-track-id") === id;
-  });
-  if (!shared) return;
+    var shared = rows.find(function (row) {
+      return row.getAttribute("data-track-id") === id;
+    });
+    if (!shared) return;
 
-  shared.querySelector(".track-play").click();
-  history.replaceState(history.state, "", window.location.pathname + window.location.hash);
+    shared.querySelector(".track-play").click();
+    history.replaceState(history.state, "", window.location.pathname + window.location.hash);
+  }
+
+  window.addEventListener("page:load", start);
+  start();
 })();

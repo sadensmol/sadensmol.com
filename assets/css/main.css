@@ -64,6 +64,10 @@ main {
   padding: 2rem 1.5rem;
 }
 
+main:focus {
+  outline: none;
+}
+
 a {
   color: var(--accent);
   text-decoration: none;
@@ -932,8 +936,8 @@ blockquote {
 }
 
 /* --- Music Player --- */
-.player,
-.player-idle {
+.player {
+  border-top: 1px solid var(--border);
   background: var(--bg-secondary);
 }
 
@@ -941,16 +945,7 @@ blockquote {
   display: none;
 }
 
-.player audio {
-  min-width: 0;
-  height: 2.5rem;
-}
-
-header .player {
-  border-top: 1px solid var(--border);
-}
-
-header .player-content {
+.player-content {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 0.5rem 1.5rem;
@@ -959,17 +954,13 @@ header .player-content {
   gap: 0.25rem 1rem;
 }
 
-header .player-content::before {
+.player-content::before {
   content: "\266A";
   content: "\266A" / "";
   color: var(--accent);
 }
 
-header .player-label {
-  display: none;
-}
-
-header .player-title {
+.player-title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -978,59 +969,10 @@ header .player-title {
   white-space: nowrap;
 }
 
-header .player audio {
+.player audio {
   flex: 2;
-}
-
-main .player,
-.player-idle {
-  margin: 1.5rem 0;
-  padding: 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  text-align: center;
-}
-
-.player-idle {
-  display: none;
-  color: var(--text-muted);
-}
-
-.player[hidden] + .player-idle {
-  display: block;
-}
-
-main .player-content {
-  position: relative;
-}
-
-main .player-label,
-main .player-title {
-  display: block;
-  padding: 0 2rem;
-}
-
-main .player-label {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-main .player-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-main .player audio {
-  display: block;
-  width: 100%;
-  margin-top: 1rem;
-}
-
-main .player-close {
-  position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
+  min-width: 0;
+  height: 2.5rem;
 }
 
 :root[data-theme="dark"] .player audio {
@@ -1146,7 +1088,7 @@ main .player-close {
 
 /* --- Print Styles --- */
 @media print {
-  header, footer, .player, .player[hidden] + .player-idle, .download-cv-btn {
+  header, footer, .player, .download-cv-btn {
     display: none !important;
   }
 
@@ -1186,12 +1128,12 @@ main .player-close {
     gap: 1rem;
   }
 
-  header .player-content {
+  .player-content {
     padding: 0.5rem 1rem;
     flex-wrap: wrap;
   }
 
-  header .player audio {
+  .player audio {
     order: 1;
     flex: 1 0 100%;
   }

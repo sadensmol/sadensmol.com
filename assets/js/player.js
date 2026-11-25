@@ -6,7 +6,10 @@
 
   var titleEl = player.querySelector(".player-title");
   var audio = player.querySelector("audio");
-  var tracks = Array.from(document.querySelectorAll(".track-play"));
+  var bound = new WeakSet();
+  var tracks = [];
+  // Kept when the visitor leaves the playlist's page, so the next song still starts.
+  var playlist = [];
 
   function readState() {
     try {
@@ -53,8 +56,12 @@
     markCurrent(null);
   }
 
-  function play(link) {
-    load({ src: link.getAttribute("href"), title: link.textContent, time: 0, playing: true });
+  function play(song) {
+    load({ src: song.src, title: song.title, time: 0, playing: true });
+  }
+
+  function songOf(link) {
+    return { src: link.getAttribute("href"), title: link.textContent };
   }
 
   function restore() {
@@ -63,22 +70,30 @@
     else stop();
   }
 
-  tracks.forEach(function (link) {
-    link.addEventListener("click", function (event) {
-      if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  function collectTracks() {
+    tracks = Array.from(document.querySelectorAll(".track-play"));
+    if (tracks.length > 0) playlist = tracks.map(songOf);
 
-      event.preventDefault();
-      play(link);
+    tracks.forEach(function (link) {
+      if (bound.has(link)) return;
+
+      bound.add(link);
+      link.addEventListener("click", function (event) {
+        if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+
+        event.preventDefault();
+        play(songOf(link));
+      });
     });
-  });
+  }
 
   audio.onended = function () {
-    if (tracks.length === 0) return;
+    if (playlist.length === 0) return;
 
-    var current = tracks.findIndex(function (link) {
-      return link.getAttribute("href") === audio.getAttribute("src");
+    var current = playlist.findIndex(function (song) {
+      return song.src === audio.getAttribute("src");
     });
-    play(tracks[(current + 1) % tracks.length]);
+    play(playlist[(current + 1) % playlist.length]);
   };
 
   player.querySelector(".player-close").addEventListener("click", function () {
@@ -113,5 +128,11 @@
     if (event.persisted) restore();
   });
 
+  window.addEventListener("page:load", function () {
+    collectTracks();
+    markCurrent(audio.getAttribute("src"));
+  });
+
+  collectTracks();
   restore();
 })();
